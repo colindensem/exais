@@ -9,7 +9,7 @@ and message groups.
 
 It also provides a number of components for building and maintaining an in memory state based upon the processed AIS data:
 
-```
+```elixir
 %AIS.Data.AisState{
   vessels: %{},                   # A list of current vessels
   position_updates: [],           # The latest position updates
@@ -18,6 +18,7 @@ It also provides a number of components for building and maintaining an in memor
   index: QuadKeyTree.create(),    # A quad-tree geospatial index of vessel potions
   latest: %{}                     # The timestamps of the latest updates for each data provider
 }
+```
 
 The `AIS.Processor` GenServer is the process for creating and maintaining this state.
 
@@ -28,7 +29,8 @@ It provides a number of callbacks for creating and querying state:
 * `handle_call({:get_entity, id}, _from, state)`: get the details for a given entity id
 
 Decoded messages presented to `handle_call({:decoded, decoded}, _, _)` take the form:
-```
+
+```elixir
 %{
   :mmsi => 636016337,
   :timestamp => ~U[2024-02-15 14:30:46Z],
