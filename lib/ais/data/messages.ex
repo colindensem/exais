@@ -29,6 +29,7 @@ defmodule AIS.Data.Messages do
 
   @new_entity %{
     id: nil,
+    name: nil,
     coordinates: nil,
     hdg: nil,
     speed: nil,
@@ -137,7 +138,7 @@ defmodule AIS.Data.Messages do
         |> Map.put(:hdg, Map.get(msg, :cog, 0.0))
         |> Map.put(:speed, Map.get(msg, :sog, 0.0))
         |> Map.put(:vms100, Map.get(msg, :vms100, false))
-        |> Map.put(:source, msg[:p])
+        |> Map.put(:source, Map.get(msg, :p, "spire"))
         |> Map.put(:timestamp, msg[:timestamp])
         |> Map.put(:nav_status, get_nav_status(update[:nav_status]))
         |> Map.put(:quadkey, Util.quadkey(Util.tile(lon, lat, 9), 9))
@@ -199,7 +200,7 @@ defmodule AIS.Data.Messages do
       |> Map.put(:type, type_or_buoy(msg, type_override))
       |> Map.put(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
       |> Map.put(:draught, msg[:draught])
-      |> Map.put(:source, msg[:p])
+      |> Map.put(:source, Map.get(msg, :p, "spire"))
       |> Map.put(:timestamp, msg[:timestamp])
       |> Map.put(:flag, get_country(msg[:mmsi]))
 
@@ -216,7 +217,7 @@ defmodule AIS.Data.Messages do
       |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimension_b], msg[:dimension_c], msg[:dimension_d]])
       |> Map.put(:aid_type, msg[:aid_type])
       |> Map.put(:type, 0)
-      |> Map.put(:source, msg[:p])
+      |> Map.put(:source, Map.get(msg, :p, "spire"))
       |> Map.put(:speed, 0)
       |> Map.put(:hdg, 0)
       |> Map.put(:timestamp, msg[:timestamp])
@@ -233,7 +234,7 @@ defmodule AIS.Data.Messages do
         current
         |> Map.put(:id, msg[:mmsi])
         |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
-        |> Map.put(:source, msg[:p])
+        |> Map.put(:source, Map.get(msg, :p, "spire"))
         |> Map.put(:timestamp, msg[:timestamp])
         |> Map.put(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
         |> Map.put(:type, type_or_buoy(msg, type_override))
@@ -246,7 +247,7 @@ defmodule AIS.Data.Messages do
         |> Map.put(:imo, msg[:imo_number])
         |> Map.put(:type, type_or_buoy(msg, type_override))
         |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
-        |> Map.put(:source, msg[:p])
+        |> Map.put(:source, Map.get(msg, :p, "spire"))
         |> Map.put(:timestamp, msg[:timestamp])
         |> Map.put(:flag, get_country(msg[:mmsi]))
 

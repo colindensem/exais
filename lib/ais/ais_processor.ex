@@ -1,4 +1,4 @@
-defmodule Ais.Processor do
+defmodule AIS.Processor do
   @moduledoc """
   Genserver for handling decoded AIS messages.
 
@@ -82,6 +82,10 @@ defmodule Ais.Processor do
   end
 
   def init(opts) do
+    # Make sure that this process does not terminate abruptly
+    # in case it is persisting to disk. terminate/2 is still a no-op.
+    Process.flag(:trap_exit, true)
+
     Logger.info("#{inspect opts[:name]} init (config; #{inspect opts})")
     db_file = Map.get(opts, :db)
    # {:ok, conn} = Mongo.start_link(url: mongo_url(), timeout: 60_000, read_preference: :primary)
@@ -91,12 +95,17 @@ defmodule Ais.Processor do
 
     # Read cached state or create new
     ais =
-      case File.read(db_file) do
-        {:ok, binary} ->
-          :erlang.binary_to_term(binary)
-        {:error, reason} ->
-          IO.puts("Failed to read ais.db. reason: #{inspect reason}")
-          IO.puts("#{inspect File.cwd()}")
+      try do
+        case File.read(db_file) do
+          {:ok, binary} ->
+            :erlang.binary_to_term(binary)
+          {:error, reason} ->
+            IO.puts("Failed to read ais.db. reason: #{inspect reason}")
+            IO.puts("#{inspect File.cwd()}")
+            AisState.create()
+        end
+      rescue
+        e ->
           AisState.create()
       end
 
@@ -168,11 +177,15 @@ defmodule Ais.Processor do
   @impl true
   def handle_call({:get_tile, x, y, z}, _from, state) do
     quadkey = Util.quadkey({String.to_integer(x), String.to_integer(y)}, String.to_integer(z))
-    keys = QuadKeyTree.query(state.index, quadkey)
-    IO.inspect(Enum.count(keys), label: "Keys:")
-    IO.inspect(Enum.count(state.vessels), label: "Total vessels:")
+    keys = QuadKeyTree.query(state.ais.index, quadkey)
 
-    {:reply, {:ok, Map.values(Map.take(state.vessels, keys))}, state}
+    {:reply, {:ok, Map.values(Map.take(state.ais.vessels, keys))}, state}
+  end
+
+  @impl true
+  def handle_call({:get_entity, id}, _from, state) do
+    # Return the vessel or empty defaults for the associated fleet_live.ex table columns
+    {:reply, Map.get(state.ais.vessels, id, nil), state}
   end
 
   defp process_decoded(decoded, %{ais: ais, pubsub: pubsub} = state) do
@@ -200,12 +213,12 @@ defmodule Ais.Processor do
 
   def handle_info({ref, {:ais_update, new_ais}}, state) do
     #Logger.info("AIS update: #{inspect Enum.count(new_ais.vessels)} total vessel count")
-    try do
-     GenServer.cast(:aisrepo, {:update_ais_state, %{updates: new_ais, from: state[:name]}})
-    rescue
-     e ->
-       Logger.error("#{inspect state[:name]} :update_ais_state error #{inspect e}")
-    end
+    # try do
+    #  GenServer.cast(:aisrepo, {:update_ais_state, %{updates: new_ais, from: state[:name]}})
+    # rescue
+    #  e ->
+    #    Logger.error("#{inspect state[:name]} :update_ais_state error #{inspect e}")
+    # end
     {:noreply, %{state | ais: new_ais}}
   end
 

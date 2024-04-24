@@ -24,7 +24,7 @@ defmodule AIS.Geo.Util do
   Get the tile containing lat/lon point at given zoom
   """
   def tile(lon, lat, z) do
-  {trunc(:math.floor(mercator_x(z, lon) / 256)), trunc(:math.floor(mercator_y(z, lat) / 256))}
+    {trunc(:math.floor(mercator_x(z, lon) / 256)), trunc(:math.floor(mercator_y(z, lat) / 256))}
   end
 
   def mercator_x(z, lon) do

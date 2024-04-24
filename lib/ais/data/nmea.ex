@@ -45,6 +45,7 @@ defmodule AIS.Data.NMEA do
     if list do
       decoded = checksum(Enum.zip(keys, values), :padding)
       computed_checksum = calculate_aivdm_checksum(decoded)
+
       if computed_checksum == decoded[:checksum] do
         {:ok, decoded}
       else

@@ -1,9 +1,8 @@
-defmodule Ais.Decoder do
+defmodule AIS.Decoder do
   @moduledoc """
   Documentation for `Ais.Decode`.
   """
   require Logger
-  alias AIS.Data.NMEA
   import Bitwise
   use GenServer
 
@@ -48,13 +47,27 @@ defmodule Ais.Decoder do
     {:noreply, state}
   end
 
+  def handle_call({:decode, msgs}, _from, state) do
+
+    Task.Supervisor.async_nolink(
+      Portal.TaskSupervisor,
+      fn -> start = System.monotonic_time()
+            {new_decoded, groups, latest} = decode_messages(msgs, state)
+            :telemetry.execute(
+              [:portal, :decoder, :decode_time],
+              %{duration: System.convert_time_unit(System.monotonic_time() - start, :native, :millisecond)}, %{})
+            {:decoded, new_decoded, groups, latest}
+      end)
+
+    {:reply, :ok, state}
+  end
+
   def handle_info({_ref, {:decoded, new_decoded, groups, latest}}, state) do
     decoded = state[:decoded] ++ new_decoded
     count = Enum.count(decoded)
     state =
       if count > 10000 do
-        GenServer.call(Map.get(state, :processor), {:decoded, decoded}, 50_000)
-        decoded = []
+        GenServer.call(Map.get(state, :processor), {:decoded, decoded}, :infinity)
         :erlang.garbage_collect()
         %{state | decoded: [], count: state[:count] + count}
       else
@@ -64,13 +77,13 @@ defmodule Ais.Decoder do
     {:noreply, %{state | groups: prune_groups(groups), latest: latest}}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, :normal}, state) do
+  def handle_info({:DOWN, _ref, :process, _pid, :normal}, state) do
     #Logger.warning("Got :DOWN")
     {:noreply, state}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
-    Logger.warning("Got :DOWN #{inspect reason}")
+    Logger.warning("AisDecoder, got :DOWN #{inspect reason}")
     {:noreply, state}
   end
 
@@ -96,14 +109,17 @@ defmodule Ais.Decoder do
         {:ok, parts} ->
           if Regex.match?(~r/,g:/, Enum.at(parts,0)) do
             {decoded, groups} = process_group(parts, groups)
-            {decoded, %{groups: groups, latest: latest}}
+            if decoded do
+              {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
+            else
+              {decoded, %{groups: groups, latest: latest}}
+            end
           else
             decoded = decode_parts(parts)
             {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
           end
       end
     else
-      #IO.puts("Failed regex #{inspect msg} #{inspect check_sum(msg)}")
       {nil, %{groups: groups, latest: latest}}
     end
   end
