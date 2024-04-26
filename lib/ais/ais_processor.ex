@@ -189,6 +189,12 @@ defmodule AIS.Processor do
   end
 
   @impl true
+  def handle_call({:get_trip, id}, _from, state) do
+    # Return the trip
+    {:reply, Map.get(state.ais.trips, id, nil), state}
+  end
+
+  @impl true
   def handle_call(:get_count, _from, state) do
     # Return the vessel or empty defaults for the associated fleet_live.ex table columns
     {:reply, Enum.count(state.ais.vessels), state}
