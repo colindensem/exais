@@ -109,6 +109,8 @@ defmodule AIS.Processor do
           AisState.create()
       end
 
+    ais = update_vessels(ais)
+
     # ais = %AisState{
     #   vessels: ais.vessels,
     #   updates: ais.updates,
@@ -117,6 +119,13 @@ defmodule AIS.Processor do
     #   latest: %{}
     # }
     ais = update_flags(ais)
+
+    ais =
+      if opts[:name] == :geovsprocessor do
+        update_type(ais, Map.get(opts, :type_override))
+      else
+        ais
+      end
 
     # Send init AisState to repo
     GenServer.cast(:aisrepo, {:update_ais_state, %{updates: ais, from: opts[:name]}})
@@ -313,7 +322,38 @@ defmodule AIS.Processor do
   defp update_flags(ais_state) do
 
     %AisState{
-      vessels: Enum.reduce(Map.values(ais_state.vessels), %{}, fn x, acc -> Map.put(acc, x.id, %{x | flag: Messages.get_country(x.id)}) end),
+      vessels: Enum.reduce(Map.values(ais_state.vessels), %{},
+                  fn x, acc ->
+                    Map.put(acc, x.id, %{x | flag: Messages.get_country(x.id)})
+                  end),
+      position_updates: ais_state.position_updates,
+      trips: ais_state.trips,
+      trip_updates: ais_state.trip_updates,
+      index: ais_state.index
+    }
+  end
+
+  defp update_vessels(ais_state) do
+    # Pre-process cached vessel data and replace any nil Lname or :speed with default values
+    %AisState{
+      vessels: Enum.reduce(Map.values(ais_state.vessels), %{},
+                  fn x, acc ->
+                    Map.put(acc, x.id, %{Map.put(x, :name, Map.get(x, :name, "")) | speed: Map.get(x, :speed, 0.0)})
+                  end),
+      position_updates: ais_state.position_updates,
+      trips: ais_state.trips,
+      trip_updates: ais_state.trip_updates,
+      index: ais_state.index
+    }
+  end
+
+  defp update_type(ais_state, type_override) do
+
+    %AisState{
+      vessels: Enum.reduce(Map.values(ais_state.vessels), %{},
+                  fn x, acc ->
+                    Map.put(acc, x.id, %{x | type: type_override})
+                  end),
       position_updates: ais_state.position_updates,
       trips: ais_state.trips,
       trip_updates: ais_state.trip_updates,
