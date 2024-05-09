@@ -182,16 +182,18 @@ defmodule AIS.Processor do
   end
 
   @impl true
-  def handle_call({:get_tile, x, y, z}, _from, state) do
-    if z > 0 do
-      quadkey = Util.quadkey({String.to_integer(x), String.to_integer(y)}, String.to_integer(z))
-      IO.puts("quadkey: #{quadkey}")
-      keys = QuadKeyTree.query(state.ais.index, quadkey)
+  def handle_call({:get_tile, x, y, "0"}, _from, state) do
+    # Handle zero zoom which won't convert to valid quadkey
+    {:reply, {:ok, []}, state}
+  end
 
-      {:reply, {:ok, Map.values(Map.take(state.ais.vessels, keys))}, state}
-    else
-      {:reply, {:ok, []}, state}
-    end
+  @impl true
+  def handle_call({:get_tile, x, y, z}, _from, state) do
+    quadkey = Util.quadkey({String.to_integer(x), String.to_integer(y)}, String.to_integer(z))
+    IO.puts("quadkey: #{x}, #{y}, #{z} - [#{quadkey}]")
+    keys = QuadKeyTree.query(state.ais.index, quadkey)
+
+    {:reply, {:ok, Map.values(Map.take(state.ais.vessels, keys))}, state}
   end
 
   @impl true
