@@ -456,7 +456,7 @@ defmodule AIS.Data.Ais do
   defp parse_message(
          msg_type,
          <<repeat_indicator::2, mmsi::30, spare::2, destination_a_id::30, offset_a::12,
-           increment_a::10, padding::4, _::bitstring>>
+           increment_a::10, _padding::4, _::bitstring>>
        )
        when msg_type == 16 do
     %{

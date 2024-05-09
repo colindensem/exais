@@ -133,7 +133,4 @@ defmodule AIS.Data.AisState do
     end
   end
 
-  defp add_entity(entities, entity) do
-    Map.put(entities, entity.id, entity)
-  end
 end

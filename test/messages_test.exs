@@ -4,7 +4,7 @@ defmodule AIS.MessagesTest do
   import AIS.MessageFixtures
 
   setup do
-    {decoded, _groups, latest} =
+    {decoded, _groups, _latest} =
       AIS.Decoder.decode_messages(messages(), %{
         fragment: "",   # Used to handle fragmented messages
         decoded: [],

@@ -77,6 +77,16 @@ defmodule AIS.Decoder do
     {:noreply, %{state | groups: prune_groups(groups), latest: latest}}
   end
 
+  def handle_info(:stats, state) do
+    #IO.puts("Decode count: #{inspect state[:count]}")
+    :telemetry.execute([:portal, :decoder, :decoded], %{count: state[:count]/10}, %{})
+    :telemetry.execute([:portal, :decoder, :message_queue_len], %{message_queue_len: Process.info(self(), :message_queue_len)}, %{})
+    :telemetry.execute([:portal, :decoder, :decode_lag], %{time: DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])}, %{})
+    #IO.puts("lag: #{inspect DateTime.now!("Etc/UTC")} #{inspect state[:latest]} #{inspect DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])}")
+    schedule_work(:stats, 10)
+    {:noreply, %{state | count: 0}}
+  end
+
   def handle_info({:DOWN, _ref, :process, _pid, :normal}, state) do
     #Logger.warning("Got :DOWN")
     {:noreply, state}
@@ -214,16 +224,6 @@ defmodule AIS.Decoder do
     |> Enum.into(%{})
   end
 
-  def handle_info(:stats, state) do
-    #IO.puts("Decode count: #{inspect state[:count]}")
-    :telemetry.execute([:portal, :decoder, :decoded], %{count: state[:count]/10}, %{})
-    :telemetry.execute([:portal, :decoder, :message_queue_len], %{message_queue_len: Process.info(self(), :message_queue_len)}, %{})
-    :telemetry.execute([:portal, :decoder, :decode_lag], %{time: DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])}, %{})
-    #IO.puts("lag: #{inspect DateTime.now!("Etc/UTC")} #{inspect state[:latest]} #{inspect DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])}")
-    schedule_work(:stats, 10)
-    {:noreply, %{state | count: 0}}
-  end
-
   defp schedule_work(task, time) do
     Process.send_after(self(), task, time * 1000) # time in seconds
   end
@@ -275,7 +275,7 @@ defmodule AIS.Decoder do
       try do
         Map.put(tags, :timestamp, DateTime.from_unix!(String.to_integer(Map.get(tags, :c))))
       rescue
-        e ->
+        _e ->
           tags
       end
     else
@@ -305,7 +305,7 @@ defmodule AIS.Decoder do
           {:error, {:incomplete, sentence}}
       end
     rescue
-      e ->
+      _e ->
         Logger.error("error deocding NMEA #{inspect state} #{inspect sentence}")
         {:error, sentence}
     end
@@ -334,7 +334,7 @@ defmodule AIS.Decoder do
       sum = calc_checksum(String.slice(Enum.join(Enum.take(fields, 6), ",") <> "," <> z, 1..-1//1))
       sum == chk
     rescue
-      e ->
+      _e ->
         IO.puts("checksum error: #{inspect fields}")
         false
     end

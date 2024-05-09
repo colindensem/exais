@@ -59,8 +59,6 @@ defmodule AIS.Processor do
   alias AIS.Geo.QuadKeyTree
   alias AIS.Geo.Util
 
-  @collection "targets"
-
   def whereis(id) do
     case :global.whereis_name({__MODULE__, id}) do
       :undefined -> nil
@@ -261,7 +259,7 @@ defmodule AIS.Processor do
     {:noreply, state}
   end
 
-  def handle_info(msg, state) do
+  def handle_info(_msg, state) do
     #Logger.warning("Got #{inspect msg}")
     {:noreply, state}
   end
@@ -361,5 +359,4 @@ defmodule AIS.Processor do
     }
   end
 
-  defp mongo_url, do: Application.get_env(:portal, :mongo_url, "mongodb://localhost:27017/ais")
 end

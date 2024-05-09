@@ -164,7 +164,7 @@ defmodule AIS.Data.Messages do
         update
       end
     rescue
-      e ->
+      _e ->
         update
     end
   end
@@ -346,7 +346,7 @@ defmodule AIS.Data.Messages do
       #if flag == "", do: IO.puts("mmsi: #{inspect mmsi} - flag: #{inspect flag}")
       flag
     rescue
-      e ->
+      _e ->
         "PH" # Not an MMSI id so default to national flag
     end
   end
