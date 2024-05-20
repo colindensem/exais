@@ -125,9 +125,6 @@ defmodule AIS.Processor do
         ais
       end
 
-    # Send init AisState to repo
-    GenServer.cast(:aisrepo, {:update_ais_state, %{updates: ais, from: opts[:name]}})
-
     # ais = init_from_vessels()
 
     {:ok, %{conn: nil, ais: ais, db_file: db_file, name: opts[:name], pubsub: opts[:pubsub], type_override: Map.get(opts, :type_override)}}
