@@ -22,8 +22,8 @@ defmodule ExAIS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      #{:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
-      {:geo_utils, path: "../geo_utils"}
+      {:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
+      #{:geo_utils, path: "../geo_utils"}
     ]
   end
 
