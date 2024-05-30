@@ -1,4 +1,4 @@
-defmodule AIS.Data.NMEA do
+defmodule ExAIS.Data.NMEA do
   import Bitwise
 
   @moduledoc """

@@ -1,10 +1,10 @@
-defmodule AIS.NMEATest do
+defmodule ExAIS.NMEATest do
   use ExUnit.Case
 
   describe "decode sentences" do
 
     test "decode !AIVDM" do
-      {:ok, result} = AIS.Data.NMEA.parse("!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*5C")
+      {:ok, result} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*5C")
       assert result.talker == "!AI"
       assert result.formatter == "VDM"
       assert result.channel == "B"
@@ -12,7 +12,7 @@ defmodule AIS.NMEATest do
     end
 
     test "decode $GPGLL" do
-      {:ok, result} = AIS.Data.NMEA.parse("$GPGLL,5133.81,N,00042.25,W*75")
+      {:ok, result} = ExAIS.Data.NMEA.parse("$GPGLL,5133.81,N,00042.25,W*75")
       assert result.talker == "$GP"
       assert result.formatter == "GLL"
       assert result.north_south == "N"

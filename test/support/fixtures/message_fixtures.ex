@@ -1,4 +1,4 @@
-defmodule AIS.MessageFixtures do
+defmodule ExAIS.MessageFixtures do
 
   @messages ["\\p:spire,s:terrestrial,c:1692781258*54\\!AIVDM,1,1,,B,B3MA@I007?sDoVW;bE=23wpUoP06,0*4B",
      "\\p:spire,s:terrestrial,c:1692781259*55\\!AIVDM,1,1,,A,33aKV05P00PG@O@N7gI@0?wT2>`<,0*3C",

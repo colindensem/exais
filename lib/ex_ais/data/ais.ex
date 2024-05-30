@@ -1,9 +1,9 @@
-defmodule AIS.Data.Ais do
+defmodule ExAIS.Data.Ais do
   @moduledoc """
   Handle decoding of the AIS Payload to a convenient `Map`.
   """
 
-  alias AIS.Data.SixBit, as: SixBit
+  alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
   Parse an AIS payload.

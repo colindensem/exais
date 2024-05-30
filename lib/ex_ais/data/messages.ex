@@ -1,12 +1,12 @@
-defmodule AIS.Data.Messages do
+defmodule ExAIS.Data.Messages do
   @moduledoc """
   Functions for updating AIS state based upon decoded AIS messages. At the moment
   handles message types: 1, 2, 3, 5, 18, 21, 24, 27
   """
 
-  alias AIS.Geo.Util
-  alias AIS.Data.Country
-  alias AIS.Data.AisState
+  alias GeoUtils.Coords
+  alias ExAIS.Data.Country
+  alias ExAIS.Data.AisState
 
   @nav_status [
     "underway_using_engine",
@@ -38,7 +38,9 @@ defmodule AIS.Data.Messages do
     nav_status: nil,
     quadkey: nil,
     flag: nil,
-    type: 1
+    ais_type: nil,
+    type: 1,
+    icon_type: 1
   }
 
   @doc """
@@ -141,12 +143,12 @@ defmodule AIS.Data.Messages do
         |> Map.put(:source, Map.get(msg, :p, "spire"))
         |> Map.put(:timestamp, msg[:timestamp])
         |> Map.put(:nav_status, get_nav_status(update[:nav_status]))
-        |> Map.put(:quadkey, Util.quadkey(Util.tile(lon, lat, 9), 9))
+        |> Map.put(:quadkey, Coords.quadkey(Coords.tile(lon, lat, 9), 9))
         |> Map.put(:flag, get_country(msg[:mmsi]))
         |> is_aton(msg)
 
       if type_override do
-        update |> Map.put(:type, type_override)
+        update |> Map.put(:type, type_override) |> Map.put(:icon_type, type_override)
       else
         update
       end
@@ -160,6 +162,7 @@ defmodule AIS.Data.Messages do
       if String.to_integer(msg[:mmsi]) >= 990000000 do
         update
         |> Map.put(:type, 10)
+        |> Map.put(:icon_type, 10)
       else
         update
       end
@@ -198,6 +201,8 @@ defmodule AIS.Data.Messages do
       |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
       |> Map.put(:imo, msg[:imo_number])
       |> Map.put(:type, type_or_buoy(msg, type_override))
+      |> Map.put(:icon_type, type_or_buoy(msg, type_override))
+      |> Map.put(:ais_type, msg[:ship_type])
       |> Map.put(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
       |> Map.put(:draught, msg[:draught])
       |> Map.put(:source, Map.get(msg, :p, "spire"))
@@ -221,7 +226,7 @@ defmodule AIS.Data.Messages do
       |> Map.put(:speed, 0)
       |> Map.put(:hdg, 0)
       |> Map.put(:timestamp, msg[:timestamp])
-      |> Map.put(:quadkey, Util.quadkey(Util.tile(lon, lat, 9), 9))
+      |> Map.put(:quadkey, Coords.quadkey(Coords.tile(lon, lat, 9), 9))
       |> Map.put(:flag, get_country(msg[:mmsi]))
     else
       nil
@@ -229,29 +234,39 @@ defmodule AIS.Data.Messages do
   end
 
   defp process_24(msg, current, type_override) do
-    cond do
-      msg[:part_number] == 0 ->
-        current
-        |> Map.put(:id, msg[:mmsi])
-        |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
-        |> Map.put(:source, Map.get(msg, :p, "spire"))
-        |> Map.put(:timestamp, msg[:timestamp])
-        |> Map.put(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
-        |> Map.put(:type, type_or_buoy(msg, type_override))
+    try do
+      cond do
+        msg[:part_number] == 0 ->
+          current
+          |> Map.put(:id, msg[:mmsi])
+          |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
+          |> Map.put(:source, Map.get(msg, :p, "spire"))
+          |> Map.put(:timestamp, msg[:timestamp])
+          |> Map.put(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
+          |> Map.put(:type, type_or_buoy(msg, type_override))
+          |> Map.put(:icon_type, type_or_buoy(msg, type_override))
+          |> Map.put(:ais_type, msg[:ship_type])
 
-      msg[:part_number] == 1 ->
-        current
-        |> Map.put(:id, msg[:mmsi])
-        |> Map.put(:callsign, String.trim(Map.get(msg, :call_sign, "")))
-        |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
-        |> Map.put(:imo, msg[:imo_number])
-        |> Map.put(:type, type_or_buoy(msg, type_override))
-        |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
-        |> Map.put(:source, Map.get(msg, :p, "spire"))
-        |> Map.put(:timestamp, msg[:timestamp])
-        |> Map.put(:flag, get_country(msg[:mmsi]))
+        msg[:part_number] == 1 ->
+          current
+          |> Map.put(:id, msg[:mmsi])
+          |> Map.put(:callsign, String.trim(Map.get(msg, :call_sign, "")))
+          |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
+          |> Map.put(:imo, msg[:imo_number])
+          |> Map.put(:type, type_or_buoy(msg, type_override))
+          |> Map.put(:icon_type, type_or_buoy(msg, type_override))
+          |> Map.put(:ais_type, msg[:ship_type])
+          |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
+          |> Map.put(:source, Map.get(msg, :p, "spire"))
+          |> Map.put(:timestamp, msg[:timestamp])
+          |> Map.put(:flag, get_country(msg[:mmsi]))
 
-      true ->
+        true ->
+          nil
+      end
+    rescue
+      e ->
+        Logger.error(Exception.format(:error, e, __STACKTRACE__))
         nil
     end
   end

@@ -1,4 +1,4 @@
-defmodule AIS.Decoder do
+defmodule ExAIS.Decoder do
   @moduledoc """
   Documentation for `Ais.Decode`.
   """
@@ -6,8 +6,8 @@ defmodule AIS.Decoder do
   import Bitwise
   use GenServer
 
-  alias AIS.Data.Ais
-  alias AIS.Data.NMEA
+  alias ExAIS.Data.Ais
+  alias ExAIS.Data.NMEA
 
 
   @initial_state %{

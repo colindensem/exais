@@ -1,4 +1,4 @@
-defmodule AIS.Data.SixBit do
+defmodule ExAIS.Data.SixBit do
   @moduledoc """
   Six-bit ASCII decoder.
   """

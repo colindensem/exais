@@ -1,4 +1,4 @@
-defmodule AIS.Data.Country do
+defmodule ExAIS.Data.Country do
   @moduledoc """
   MID Codes - https://www.vtexplorer.com/mmsi-mid-codes-en/
   """
