@@ -3,6 +3,7 @@ defmodule ExAIS.Data.Messages do
   Functions for updating AIS state based upon decoded AIS messages. At the moment
   handles message types: 1, 2, 3, 5, 18, 21, 24, 27
   """
+  require Logger
 
   alias GeoUtils.Coords
   alias ExAIS.Data.Country
@@ -173,6 +174,7 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_static(msg, current, type_override) do
+    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{msg}")
     reported = msg[:timestamp]
 
     trip =
@@ -197,11 +199,11 @@ defmodule ExAIS.Data.Messages do
     update =
       current
       |> Map.put(:id, msg[:mmsi])
-      |> Map.put(:callsign, String.trim(Map.get(msg, :call_sign, "")))
-      |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
-      |> Map.put(:imo, msg[:imo_number])
-      |> Map.put(:type, type_or_buoy(msg, type_override))
-      |> Map.put(:icon_type, type_or_buoy(msg, type_override))
+      |> update_map(:callsign, Map.get(msg, :call_sign))
+      |> update_map(:name, Map.get(msg, :name))
+      |> update_map(:imo, msg[:imo_number])
+      |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
+      |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
       |> Map.put(:ais_type, msg[:ship_type])
       |> Map.put(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
       |> Map.put(:draught, msg[:draught])
@@ -234,28 +236,29 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_24(msg, current, type_override) do
+    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{msg}")
     try do
       cond do
         msg[:part_number] == 0 ->
           current
           |> Map.put(:id, msg[:mmsi])
-          |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
+          |> update_map(:name, Map.get(msg, :name))
           |> Map.put(:source, Map.get(msg, :p, "spire"))
           |> Map.put(:timestamp, msg[:timestamp])
           |> Map.put(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
-          |> Map.put(:type, type_or_buoy(msg, type_override))
-          |> Map.put(:icon_type, type_or_buoy(msg, type_override))
-          |> Map.put(:ais_type, msg[:ship_type])
+          |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
+          |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
+          |> update_map(:ais_type, msg[:ship_type])
 
         msg[:part_number] == 1 ->
           current
           |> Map.put(:id, msg[:mmsi])
-          |> Map.put(:callsign, String.trim(Map.get(msg, :call_sign, "")))
-          |> Map.put(:name, String.trim(Map.get(msg, :name, "")))
-          |> Map.put(:imo, msg[:imo_number])
-          |> Map.put(:type, type_or_buoy(msg, type_override))
-          |> Map.put(:icon_type, type_or_buoy(msg, type_override))
-          |> Map.put(:ais_type, msg[:ship_type])
+          |> update_map(:callsign, Map.get(msg, :call_sign))
+          |> update_map(:name, Map.get(msg, :name))
+          |> update_map(:imo, msg[:imo_number])
+          |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
+          |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
+          |> update_map(:ais_type, msg[:ship_type])
           |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
           |> Map.put(:source, Map.get(msg, :p, "spire"))
           |> Map.put(:timestamp, msg[:timestamp])
@@ -271,10 +274,41 @@ defmodule ExAIS.Data.Messages do
     end
   end
 
-  defp type_or_buoy(msg, override) do
+  #
+  # Pattern Matching to update map but ensure
+  # we don't over-write valid data with nil data
+  #
+  defp update_map(current, key, nil) do
+    current
+  end
+
+  defp update_map(current, key, value) when is_binary(value) do
+    Map.put(current, key, String.trim(value))
+  end
+
+  defp update_map(current, key, value) do
+    Map.put(current, key, value)
+  end
+
+  defp update_map(current, :type, nil, _name, _override) do
+    current
+  end
+
+  defp update_map(current, :type, value, name, override) do
+    Map.put(current, :type, type_or_buoy(value, name, override))
+  end
+
+  defp update_map(current, :icon_type, nil, _name, _override) do
+    current
+  end
+
+  defp update_map(current, :icon_type, value, name, override) do
+    Map.put(current, :icon_type, type_or_buoy(value, name, override))
+  end
+
+  defp type_or_buoy(type, name, override) do
     name_str =
-      String.downcase(
-        String.trim(Map.get(msg, :name, "")))
+      String.downcase(String.trim(name))
 
     cond do
       String.contains?(name_str,"buoy") ->
@@ -284,7 +318,7 @@ defmodule ExAIS.Data.Messages do
         10
 
       true ->
-        get_type(msg[:ship_type], override)
+        get_type(type, override)
     end
   end
 

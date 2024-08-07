@@ -1,0 +1,3 @@
+%{
+  "geo_utils": {:git, "https://github.com/admarrs/geo_utils.git", "a178a4b19fa864febcc539553251c8c7f631e618", []},
+}
