@@ -174,7 +174,7 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_static(msg, current, type_override) do
-    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{msg}")
+    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
     reported = msg[:timestamp]
 
     trip =
@@ -236,7 +236,7 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_24(msg, current, type_override) do
-    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{msg}")
+    if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
     try do
       cond do
         msg[:part_number] == 0 ->
