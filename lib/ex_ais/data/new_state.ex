@@ -1,5 +1,4 @@
 defmodule ExAIS.Data.AisState do
-
   alias ExAIS.Data.AisState
   alias GeoUtils.QuadKeyTree
 
@@ -38,6 +37,7 @@ defmodule ExAIS.Data.AisState do
         index: state.index,
         latest: state.latest
       }
+
       new
     else
       try do
@@ -56,11 +56,12 @@ defmodule ExAIS.Data.AisState do
           index: QuadKeyTree.insert(index, update.quadkey, update.id),
           latest: state.latest
         }
+
         new
       rescue
         e ->
-          IO.puts("AisState.update error: #{inspect e}")
-          #IO.inspect(__STACKTRACE__)
+          IO.puts("AisState.update error: #{inspect(e)}")
+          # IO.inspect(__STACKTRACE__)
           state
       end
     end
@@ -104,18 +105,24 @@ defmodule ExAIS.Data.AisState do
 
   def update_latest(state, provider, timestamp) do
     time = Map.get(state.latest, provider)
+
     if time do
       case DateTime.compare(timestamp, time) do
-        :gt -> %AisState{
-                  vessels: state.vessels,
-                  position_updates: state.position_updates,
-                  trips: state.trips,
-                  trip_updates: state.trip_updates,
-                  index: state.index,
-                  latest: Map.put(state.latest, provider, timestamp)
-                }
-        :lt -> state
-        :eq -> state
+        :gt ->
+          %AisState{
+            vessels: state.vessels,
+            position_updates: state.position_updates,
+            trips: state.trips,
+            trip_updates: state.trip_updates,
+            index: state.index,
+            latest: Map.put(state.latest, provider, timestamp)
+          }
+
+        :lt ->
+          state
+
+        :eq ->
+          state
       end
     else
       if provider do
@@ -132,5 +139,4 @@ defmodule ExAIS.Data.AisState do
       end
     end
   end
-
 end

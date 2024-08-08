@@ -6,35 +6,44 @@ defmodule ExAIS.MessagesTest do
   setup do
     {decoded, _groups, _latest} =
       ExAIS.Decoder.decode_messages(messages(), %{
-        fragment: "",   # Used to handle fragmented messages
+        # Used to handle fragmented messages
+        fragment: "",
         decoded: [],
-        groups: %{},     # Map of list of grouped messages keyed by group id
+        # Map of list of grouped messages keyed by group id
+        groups: %{},
         latest: DateTime.from_unix!(0)
       })
 
-      state = %ExAIS.Data.AisState{
-        vessels: %{},
-        position_updates: [],
-        trips: %{},
-        trip_updates: [],
-        index: GeoUtils.QuadKeyTree.create(),
-        latest: %{}
-      }
+    state = %ExAIS.Data.AisState{
+      vessels: %{},
+      position_updates: [],
+      trips: %{},
+      trip_updates: [],
+      index: GeoUtils.QuadKeyTree.create(),
+      latest: %{}
+    }
+
     %{decoded: decoded, state: state}
   end
 
   describe "Turns parsed sentences into AisState updates" do
-
     test "process_messages/2 processes a single message", %{decoded: decoded, state: state} do
-      state = ExAIS.Data.Messages.process_messages(
-        Enum.take(decoded, 1), state)
+      %{state: state, stats: stats} =
+        ExAIS.Data.Messages.process_messages(
+          Enum.take(decoded, 1),
+          state
+        )
+
       assert Enum.count(state.position_updates) == 1
       assert state.index.count == 1
     end
 
     test "process_messages/2 processes a list of message", %{decoded: decoded, state: state} do
-      state = ExAIS.Data.Messages.process_messages(
-        decoded, state)
+      %{state: state, stats: stats} =
+        ExAIS.Data.Messages.process_messages(
+          decoded,
+          state
+        )
 
       assert Enum.count(state.vessels) == 26
       assert Enum.count(state.position_updates) == 16
@@ -47,7 +56,6 @@ defmodule ExAIS.MessagesTest do
   end
 
   describe "Updates state" do
-
     test "Creates new state entry", %{state: state} do
       messages = [
         %{
@@ -58,10 +66,11 @@ defmodule ExAIS.MessagesTest do
           longitude: -114.0,
           latitude: 34.0,
           cog: 210.0,
-          sog: 3.0,
+          sog: 3.0
         }
       ]
-      new = ExAIS.Data.Messages.process_messages(messages, state)
+
+      %{state: new, stats: _stats} = ExAIS.Data.Messages.process_messages(messages, state)
       assert Enum.count(new.vessels) == 1
     end
 
@@ -75,7 +84,7 @@ defmodule ExAIS.MessagesTest do
           longitude: -114.0,
           latitude: 34.0,
           cog: 210.0,
-          sog: 3.0,
+          sog: 3.0
         },
         %{
           timestamp: ~U[2023-08-23 09:01:59Z],
@@ -90,10 +99,11 @@ defmodule ExAIS.MessagesTest do
           dimension_a: 8,
           dimension_b: 6,
           dimension_c: 4,
-          dimension_d: 4,
+          dimension_d: 4
         }
       ]
-      new = ExAIS.Data.Messages.process_messages(messages, state)
+
+      %{state: new, stats: _stats} = ExAIS.Data.Messages.process_messages(messages, state)
       assert Enum.count(new.vessels) == 1
       assert new.vessels["239951600"].callsign == "SVA6986"
       assert new.vessels["239951600"].type == 8
@@ -109,7 +119,7 @@ defmodule ExAIS.MessagesTest do
           longitude: -114.0,
           latitude: 34.0,
           cog: 210.0,
-          sog: 3.0,
+          sog: 3.0
         },
         %{
           timestamp: ~U[2023-08-23 09:01:59Z],
@@ -124,7 +134,7 @@ defmodule ExAIS.MessagesTest do
           dimension_a: 8,
           dimension_b: 6,
           dimension_c: 4,
-          dimension_d: 4,
+          dimension_d: 4
         },
         %{
           timestamp: ~U[2023-08-23 09:02:59Z],
@@ -138,10 +148,11 @@ defmodule ExAIS.MessagesTest do
           dimension_a: 8,
           dimension_b: 6,
           dimension_c: 4,
-          dimension_d: 4,
-        },
+          dimension_d: 4
+        }
       ]
-      new = ExAIS.Data.Messages.process_messages(messages, state)
+
+      %{state: new, stats: _stats} = ExAIS.Data.Messages.process_messages(messages, state)
       assert Enum.count(new.vessels) == 1
       assert new.vessels["239951600"].callsign == "SVA6986"
       assert new.vessels["239951600"].name == "HYDRA VIII"
@@ -158,7 +169,7 @@ defmodule ExAIS.MessagesTest do
           longitude: -114.0,
           latitude: 34.0,
           cog: 210.0,
-          sog: 3.0,
+          sog: 3.0
         },
         %{
           timestamp: ~U[2023-08-23 09:01:59Z],
@@ -173,7 +184,7 @@ defmodule ExAIS.MessagesTest do
           dimension_a: 8,
           dimension_b: 6,
           dimension_c: 4,
-          dimension_d: 4,
+          dimension_d: 4
         },
         %{
           timestamp: ~U[2023-08-23 09:02:59Z],
@@ -188,10 +199,11 @@ defmodule ExAIS.MessagesTest do
           dimension_a: 8,
           dimension_b: 6,
           dimension_c: 4,
-          dimension_d: 4,
-        },
+          dimension_d: 4
+        }
       ]
-      new = ExAIS.Data.Messages.process_messages(messages, state)
+
+      %{state: new, stats: _stats} = ExAIS.Data.Messages.process_messages(messages, state)
       assert Enum.count(new.vessels) == 1
       assert new.vessels["239951600"].callsign == "SVA6986"
       assert new.vessels["239951600"].name == "HYDRA VIII"

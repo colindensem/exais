@@ -33,29 +33,33 @@ defmodule ExAIS.Data.Ais do
     end
 
     # Only interested in these message types
-    #if msg_type in [1, 2, 3, 5, 18, 21, 24, 25, 27] do
-      try do
-        attributes = parse_message(msg_type, tail)
+    # if msg_type in [1, 2, 3, 5, 18, 21, 24, 25, 27] do
+    try do
+      attributes = parse_message(msg_type, tail)
 
-        {:ok, Map.merge(%{msg_type: msg_type},
-                if Map.has_key?(attributes, :mmsi) do
-                  # Convert MMSIs to strings
-                  %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
-                else
-                  attributes
-                end
-              )}
-      rescue
-        e in MatchError ->
-          IO.puts(
-            "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect byte_size(orig_payload)}: " <> Exception.message(e) <> Exception.format_stacktrace(nil)
-          )
+      {:ok,
+       Map.merge(
+         %{msg_type: msg_type},
+         if Map.has_key?(attributes, :mmsi) do
+           # Convert MMSIs to strings
+           %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
+         else
+           attributes
+         end
+       )}
+    rescue
+      e in MatchError ->
+        IO.puts(
+          "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect(byte_size(orig_payload))}: " <>
+            Exception.message(e) <> Exception.format_stacktrace(nil)
+        )
 
-          {:invalid, %{}}
-      end
-    #else
+        {:invalid, %{}}
+    end
+
+    # else
     #  {:ignore, %{}}
-    #end
+    # end
   end
 
   # Class A AIS Position Report (Messages 1, 2, and 3)
@@ -64,11 +68,11 @@ defmodule ExAIS.Data.Ais do
   # !AIVDM,1,1,,B,39NSDjP02201T0HLBJDBv2GD02s1,0*14  ID 3
   defp parse_message(msg_type, payload)
        when msg_type == 1 or msg_type == 2 or msg_type == 3 do
-    <<repeat_indicator::2, mmsi::30, navigational_status::4,
-      rate_of_turn::integer-signed-size(8), sog::integer-unsigned-size(10), position_accuracy::1,
-      longitude::integer-signed-size(28), latitude::integer-signed-size(27), cog::12,
-      true_heading::9, time_stamp::6, special_maneuvre_indicator::2, spare::3, raim_flag::1,
-      communication_state::19, _::bitstring>> = payload
+    <<repeat_indicator::2, mmsi::30, navigational_status::4, rate_of_turn::integer-signed-size(8),
+      sog::integer-unsigned-size(10), position_accuracy::1, longitude::integer-signed-size(28),
+      latitude::integer-signed-size(27), cog::12, true_heading::9, time_stamp::6,
+      special_maneuvre_indicator::2, spare::3, raim_flag::1, communication_state::19,
+      _::bitstring>> = payload
 
     %{
       repeat_indicator: repeat_indicator,
@@ -127,9 +131,8 @@ defmodule ExAIS.Data.Ais do
   defp parse_message(msg_type, payload) when msg_type == 5 do
     <<repeat_indicator::2, mmsi::30, ais_version_indicator::2, imo_number::30, call_sign::42,
       name::120, ship_type::8, dimension_to_bow::9, dimension_to_stern::9, dimension_to_port::6,
-      dimension_to_starboard::6, position_fix_type::4, eta_month::4, eta_day::5,
-      eta_hour::5, eta_minute::6, draught::8, destination::120, dte::1,
-      spare::1, _::bitstring>> = payload
+      dimension_to_starboard::6, position_fix_type::4, eta_month::4, eta_day::5, eta_hour::5,
+      eta_minute::6, draught::8, destination::120, dte::1, spare::1, _::bitstring>> = payload
 
     %{
       repeat_indicator: repeat_indicator,
@@ -161,9 +164,8 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessage6
   # !AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16
   defp parse_message(msg_type, payload) when msg_type == 6 do
-    <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30,
-      retransmit_flag::1, spare::1, application_identifier::16,
-      application_data::bitstring>> = payload
+    <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
+      spare::1, application_identifier::16, application_data::bitstring>> = payload
 
     %{
       repeat_indicator: repeat_indicator,
@@ -322,8 +324,8 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessage12
   # !AIVDM,1,1,,A,<42Lati0W:Ov=C7P6B?=Pjoihhjhqq0,2*2B
   defp parse_message(msg_type, payload) when msg_type == 12 do
-    <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30,
-      retransmit_flag::1, spare::1, safety_related_text::bitstring>> = payload
+    <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
+      spare::1, safety_related_text::bitstring>> = payload
 
     safety_text_size = Kernel.floor(bit_size(safety_related_text) / 6) * 6
     <<safety_text::size(safety_text_size), _::bitstring>> = safety_related_text
@@ -679,12 +681,11 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessage21
   # !AIVDM,1,1,,B,E>jCfrv2`0c2h0W:0a2ah@@@@@@004WD>;2<H50hppN000,4*0A
   defp parse_message(msg_type, payload) when msg_type == 21 do
-    <<repeat_indicator::2, mmsi::30, aid_type::5, aid_name::120,
-      position_accuracy::1, longitude::integer-signed-size(28), latitude::integer-signed-size(27),
-      dimension_a::9, dimension_b::9, dimension_c::6, dimension_d::6,
-      type_of_epfd::4, time_stamp::6, off_position_indicator::1,
-      aton_status::8, raim_flag::1, virtual_aton_flag::1, assigned_mode_flag::1, spare::1,
-      name_extension::bitstring>> = payload
+    <<repeat_indicator::2, mmsi::30, aid_type::5, aid_name::120, position_accuracy::1,
+      longitude::integer-signed-size(28), latitude::integer-signed-size(27), dimension_a::9,
+      dimension_b::9, dimension_c::6, dimension_d::6, type_of_epfd::4, time_stamp::6,
+      off_position_indicator::1, aton_status::8, raim_flag::1, virtual_aton_flag::1,
+      assigned_mode_flag::1, spare::1, name_extension::bitstring>> = payload
 
     name_extension_size = bit_size(name_extension)
 
@@ -785,9 +786,9 @@ defmodule ExAIS.Data.Ais do
   # Pattern-matching magic: B is before A
   defp parse_message(
          msg_type,
-         <<repeat_indicator::2, mmsi::30, part_number::2, ship_type::8,
-           vendor_id::42, call_sign::42, dimension_a::9, dimension_b::9, dimension_c::6,
-           dimension_d::6, type_of_epfd::4, spare::2>>
+         <<repeat_indicator::2, mmsi::30, part_number::2, ship_type::8, vendor_id::42,
+           call_sign::42, dimension_a::9, dimension_b::9, dimension_c::6, dimension_d::6,
+           type_of_epfd::4, spare::2>>
        )
        when msg_type == 24 do
     %{
@@ -918,9 +919,9 @@ defmodule ExAIS.Data.Ais do
          payload
        )
        when msg_type == 27 do
-    <<repeat_indicator::2, mmsi::30, position_accuracy::1, raim_flag::1,
-      navigational_status::4, longitude::integer-signed-size(18),
-      latitude::integer-signed-size(17), sog::6, cog::9, position_latency::1, spare::1>> = payload
+    <<repeat_indicator::2, mmsi::30, position_accuracy::1, raim_flag::1, navigational_status::4,
+      longitude::integer-signed-size(18), latitude::integer-signed-size(17), sog::6, cog::9,
+      position_latency::1, spare::1>> = payload
 
     %{
       repeat_indicator: repeat_indicator,

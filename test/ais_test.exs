@@ -2,7 +2,6 @@ defmodule ExAIS.AisTest do
   use ExUnit.Case
 
   describe "decode sentences" do
-
     test "decode class 1" do
       {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52")
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
@@ -29,7 +28,11 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 5" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,2,1,9,B,53qH`N0286j=<p8b220ti`62222222222222221?9p;554oF0;B3k51CPEH888888888880,0*68")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse(
+          "!AIVDM,2,1,9,B,53qH`N0286j=<p8b220ti`62222222222222221?9p;554oF0;B3k51CPEH888888888880,0*68"
+        )
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 5
       assert attr.mmsi == "261499000"
@@ -41,7 +44,7 @@ defmodule ExAIS.AisTest do
       {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16")
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 6
-      assert attr.destination_id == 999999999
+      assert attr.destination_id == 999_999_999
     end
 
     test "decode class 7" do
@@ -71,15 +74,17 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 10
       assert attr.mmsi == "538090168"
-      assert attr.destination_id == 352324000
+      assert attr.destination_id == 352_324_000
     end
 
     test "decode class 12" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,<42Lati0W:Ov=C7P6B?=Pjoihhjhqq0,2*2B")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,<42Lati0W:Ov=C7P6B?=Pjoihhjhqq0,2*2B")
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 12
       assert attr.mmsi == "271002099"
-      assert attr.destination_id == 271002111
+      assert attr.destination_id == 271_002_111
     end
 
     test "decode class 14" do
@@ -95,12 +100,14 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 16
       assert attr.mmsi == "439952844"
-      assert attr.destination_a_id == 315920
-      assert attr.destination_b_id == 230137673
+      assert attr.destination_a_id == 315_920
+      assert attr.destination_b_id == 230_137_673
     end
 
     test "decode class 17" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,A04757QAv0agH2JdGlLP7Oqa0@TGw9H170,4*5A")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,A04757QAv0agH2JdGlLP7Oqa0@TGw9H170,4*5A")
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 17
       assert attr.mmsi == "4310302"
@@ -118,7 +125,11 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 19" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,C69DqeP0Ar8;JH3R6<4O7wWPl@:62L>jcaQgh0000000?104222P,0*32")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse(
+          "!AIVDM,1,1,,B,C69DqeP0Ar8;JH3R6<4O7wWPl@:62L>jcaQgh0000000?104222P,0*32"
+        )
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 19
       assert attr.mmsi == "412432822"
@@ -131,12 +142,14 @@ defmodule ExAIS.AisTest do
       {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,Dh3OvjB8IN>4,0*1D")
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 20
-      assert attr.id == 3669705
+      assert attr.id == 3_669_705
       assert attr.offset_1 == 2182
     end
 
     test "decode class 21" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,E>jCfrv2`0c2h0W:0a2ah@@@@@@004WD>;2<H50hppN000,4*0A")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,E>jCfrv2`0c2h0W:0a2ah@@@@@@004WD>;2<H50hppN000,4*0A")
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 21
       assert attr.mmsi == "992276203"
@@ -149,7 +162,7 @@ defmodule ExAIS.AisTest do
       {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,F030p?j2N2P73FiiNesU3FR10000,0*32")
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 22
-      assert attr.id == 3160127
+      assert attr.id == 3_160_127
       assert attr.channel_a == 2087
       assert attr.channel_b == 2088
       assert attr.zone_size == 2
@@ -181,24 +194,33 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 25" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,2,1,3,A,I`1ifG20UrcNTFE?UgLeo@Dk:o6G4hhI8;?vW2?El>Deju@c3Si451FJd9WPU<>B,0*04")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse(
+          "!AIVDM,2,1,3,A,I`1ifG20UrcNTFE?UgLeo@Dk:o6G4hhI8;?vW2?El>Deju@c3Si451FJd9WPU<>B,0*04"
+        )
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 25
       assert attr.mmsi == "538734172"
       assert attr.repeat_indicator == 2
-      assert attr.binary_data == <<128, 151, 170, 222, 145, 101, 79, 150, 247, 45, 221, 5, 51, 43,
-      113, 151, 19, 12, 25, 32, 179, 254, 156, 35, 213, 208, 229, 45, 203, 212,
-      43, 14, 60, 68, 20, 21, 154, 176, 153, 224, 148, 195, 146>>
+
+      assert attr.binary_data ==
+               <<128, 151, 170, 222, 145, 101, 79, 150, 247, 45, 221, 5, 51, 43, 113, 151, 19, 12,
+                 25, 32, 179, 254, 156, 35, 213, 208, 229, 45, 203, 212, 43, 14, 60, 68, 20, 21,
+                 154, 176, 153, 224, 148, 195, 146>>
     end
 
     test "decode class 26" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,J1@@0IK70PGgT740000000000@000?D0ih1e00006JlPC9C3,0*6B")
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse(
+          "!AIVDM,1,1,,A,J1@@0IK70PGgT740000000000@000?D0ih1e00006JlPC9C3,0*6B"
+        )
+
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 26
       assert attr.mmsi == "84148325"
-      assert attr.destination_id == 834699643
-      assert attr.binary_data == 83076754475605189869857356738384388
-
+      assert attr.destination_id == 834_699_643
+      assert attr.binary_data == 83_076_754_475_605_189_869_857_356_738_384_388
     end
 
     test "decode class 27" do
@@ -208,7 +230,6 @@ defmodule ExAIS.AisTest do
       assert attr.mmsi == "236091959"
       assert attr.latitude == 87.065
       assert attr.longitude == -154.20166666666665
-
     end
   end
 end

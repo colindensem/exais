@@ -1,16 +1,17 @@
 defmodule AIS.Geo.QuadKeyTree do
-
   alias AIS.Geo.QuadKeyTree
 
   defstruct count: 0, nodes: [], key: 0, level: 0, children: []
 
   def create() do
-    %QuadKeyTree{nodes: [
-      %QuadKeyTree{key: 0, level: 1},
-      %QuadKeyTree{key: 1, level: 1},
-      %QuadKeyTree{key: 2, level: 1},
-      %QuadKeyTree{key: 3, level: 1},
-    ]}
+    %QuadKeyTree{
+      nodes: [
+        %QuadKeyTree{key: 0, level: 1},
+        %QuadKeyTree{key: 1, level: 1},
+        %QuadKeyTree{key: 2, level: 1},
+        %QuadKeyTree{key: 3, level: 1}
+      ]
+    }
   end
 
   @doc """
@@ -27,13 +28,16 @@ defmodule AIS.Geo.QuadKeyTree do
   """
   def query(tree, quadkey) do
     zoom = String.length(quadkey)
-    group_zoom = cond do
-      zoom == 2 -> 6
-      zoom == 3 -> 7
-      zoom == 4 -> 8
-      zoom == 5 -> 9
-      true -> 15
-    end
+
+    group_zoom =
+      cond do
+        zoom == 2 -> 6
+        zoom == 3 -> 7
+        zoom == 4 -> 8
+        zoom == 5 -> 9
+        true -> 15
+      end
+
     query_group(tree, quadkey, group_zoom)
   end
 
@@ -54,19 +58,22 @@ defmodule AIS.Geo.QuadKeyTree do
           new_nodes =
             if subkey == "" do
               tree.nodes
-              |> List.replace_at(i, %QuadKeyTree{node | children: Enum.filter(node.children, fn x -> x != entity end)})
+              |> List.replace_at(i, %QuadKeyTree{
+                node
+                | children: Enum.filter(node.children, fn x -> x != entity end)
+              })
             else
               tree.nodes
               |> List.replace_at(i, remove(node, subkey, entity))
             end
 
-          %QuadKeyTree{ tree | nodes: new_nodes, count: count - 1 }
+          %QuadKeyTree{tree | nodes: new_nodes, count: count - 1}
         else
           tree
         end
       rescue
         e ->
-          IO.puts("remove exception: #{inspect quadkey} #{inspect e}")
+          IO.puts("remove exception: #{inspect(quadkey)} #{inspect(e)}")
           tree
       end
     else
@@ -75,7 +82,7 @@ defmodule AIS.Geo.QuadKeyTree do
   end
 
   def count(tree) do
-    if (has_subnodes?(tree)) do
+    if has_subnodes?(tree) do
       tree.nodes
       |> Enum.map(fn node ->
         count(node)
@@ -93,8 +100,9 @@ defmodule AIS.Geo.QuadKeyTree do
     # if not then return all children
     i = String.to_integer(String.first(quadkey))
     subkey = String.slice(quadkey, 1..-1//1)
+
     if subkey != "" do
-      if (has_subnodes?(tree)) do
+      if has_subnodes?(tree) do
         query_group(Enum.at(tree.nodes, i), subkey, group_zoom)
       else
         if tree.level > group_zoom do
@@ -104,7 +112,7 @@ defmodule AIS.Geo.QuadKeyTree do
         end
       end
     else
-      if (has_subnodes?(tree)) do
+      if has_subnodes?(tree) do
         query_group(Enum.at(tree.nodes, i), group_zoom)
       else
         if tree.level > group_zoom do
@@ -120,7 +128,7 @@ defmodule AIS.Geo.QuadKeyTree do
     # No quadkey so simply collect all children at the leaf nodes below this tree
     # Return only the first child in the children list if we are below the
     # group_zoom level.
-    if (has_subnodes?(tree)) do
+    if has_subnodes?(tree) do
       tree.nodes
       |> Enum.map(fn node ->
         query_group(node, group_zoom)
@@ -140,7 +148,7 @@ defmodule AIS.Geo.QuadKeyTree do
   end
 
   defp insert_entity(tree, level, quadkey, entity) do
-    if (has_subnodes?(tree)) do
+    if has_subnodes?(tree) do
       insert_entity(tree, level, quadkey, entity, :subnodes)
     else
       insert_entity(tree, level, quadkey, entity, :empty)
@@ -161,24 +169,27 @@ defmodule AIS.Geo.QuadKeyTree do
     new_nodes =
       if subkey == "" do
         tree.nodes
-        |> List.replace_at(i, %QuadKeyTree{node | children: node.children ++ [entity], level: level})
+        |> List.replace_at(i, %QuadKeyTree{
+          node
+          | children: node.children ++ [entity],
+            level: level
+        })
       else
         tree.nodes
         |> List.replace_at(i, insert_entity(node, level + 1, subkey, entity))
       end
 
-      %QuadKeyTree{ tree | nodes: new_nodes, count: count + 1 }
-
+    %QuadKeyTree{tree | nodes: new_nodes, count: count + 1}
   end
 
   defp insert_entity(tree, level, quadkey, entity, :empty) do
     nodes = [
-        %QuadKeyTree{key: 0, level: level},
-        %QuadKeyTree{key: 1, level: level},
-        %QuadKeyTree{key: 2, level: level},
-        %QuadKeyTree{key: 3, level: level}
+      %QuadKeyTree{key: 0, level: level},
+      %QuadKeyTree{key: 1, level: level},
+      %QuadKeyTree{key: 2, level: level},
+      %QuadKeyTree{key: 3, level: level}
     ]
-    insert_entity(%QuadKeyTree{ tree | nodes: nodes }, level, quadkey, entity, :subnodes)
-  end
 
+    insert_entity(%QuadKeyTree{tree | nodes: nodes}, level, quadkey, entity, :subnodes)
+  end
 end

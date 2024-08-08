@@ -55,22 +55,26 @@ defmodule ExAIS.Data.Messages do
   def process_messages(msgs, state, type_override \\ nil) do
     # Update the state given the set of messages, keep a separate
     # record of those updates so we can publish them to clients via a websocket
-    #if Enum.count(msgs) > 0 do
+    # if Enum.count(msgs) > 0 do
     #  IO.puts("Processing #{inspect Enum.count(msgs)} messages")
-    #end
+    # end
 
-    Enum.reduce(msgs, state, fn x, acc -> process_message(x, acc, type_override) end)
+    # We want to collect message stats:
+    # - how many messages per provider by type
+    # - how many messages per provider with null static data (ais_type, name)
+    stats = init_stats()
+
+    Enum.reduce(msgs, %{state: state, stats: stats}, fn x, acc ->
+      process_message(x, acc, type_override)
+    end)
   end
 
-  defp process_message(msg, state, type_override) do
+  defp process_message(msg, %{state: state, stats: stats}, type_override) do
     if Map.get(msg, :timestamp) do
       key = msg[:mmsi]
-      #IO.puts("#{key} #{inspect state.index.count}")
       current = Map.get(state.vessels, key, @new_entity)
 
       state = AisState.update_latest(state, msg[:p], msg[:timestamp])
-
-      #IO.puts("-> #{inspect msg["p"]} #{inspect msg["c"]} #{inspect msg["timestamp"]} #{inspect Map.get(current, :timestamp)}")
 
       current_time = Map.get(current, :timestamp, DateTime.from_unix!(0))
       current_time = if !current_time, do: DateTime.from_unix!(0), else: current_time
@@ -79,44 +83,61 @@ defmodule ExAIS.Data.Messages do
         new_state =
           case msg[:msg_type] do
             1 ->
+              put_in(stats, [msg[:p], :totals, "1"], get_in(stats, [msg[:p], :totals, "1"]) + 1)
               merge_update(state, process_position(msg, current, type_override))
+
             2 ->
+              put_in(stats, [msg[:p], :totals, "2"], get_in(stats, [msg[:p], :totals, "2"]) + 1)
               merge_update(state, process_position(msg, current, type_override))
+
             3 ->
+              put_in(stats, [msg[:p], :totals, "3"], get_in(stats, [msg[:p], :totals, "3"]) + 1)
               merge_update(state, process_position(msg, current, type_override))
+
             5 ->
+              put_in(stats, [msg[:p], :totals, "5"], get_in(stats, [msg[:p], :totals, "5"]) + 1)
               {trip, vessel} = process_static(msg, current, type_override)
+
               state
               |> merge_update(vessel)
               |> merge_trip(trip)
+
             9 ->
-              #IO.puts("Type 9: #{inspect msg}")
               state
+
             18 ->
+              put_in(stats, [msg[:p], :totals, "18"], get_in(stats, [msg[:p], :totals, "18"]) + 1)
               merge_update(state, process_position(msg, current, type_override))
+
             19 ->
-              #IO.puts("Type 19: #{inspect msg}")
               state
+
             21 ->
+              put_in(stats, [msg[:p], :totals, "21"], get_in(stats, [msg[:p], :totals, "21"]) + 1)
               merge_update(state, process_aton(msg, current))
+
             24 ->
+              put_in(stats, [msg[:p], :totals, "24"], get_in(stats, [msg[:p], :totals, "24"]) + 1)
               merge_update(state, process_24(msg, current, type_override))
+
             27 ->
+              put_in(stats, [msg[:p], :totals, "27"], get_in(stats, [msg[:p], :totals, "27"]) + 1)
               merge_update(state, process_position(msg, current, type_override))
-            _ -> state
+
+            _ ->
+              state
           end
 
-        new_state
+        %{state: new_state, stats: stats}
       else
-        state
+        %{state: state, stats: stats}
       end
     else
-      state
+      %{state: state, stats: stats}
     end
   end
 
   defp process_position(msg, current, type_override) do
-    #IO.puts("msg: #{inspect msg}")
     update =
       if Map.has_key?(current, :nav_status) do
         %{current | nav_status: Map.get(msg, :nav_status, 15)}
@@ -132,8 +153,8 @@ defmodule ExAIS.Data.Messages do
       end
 
     [lon, lat] = [msg[:longitude], msg[:latitude]]
-    if lat < 90.0 and lat > -90.0 do
 
+    if lat < 90.0 and lat > -90.0 do
       update =
         update
         |> Map.put(:id, msg[:mmsi])
@@ -160,7 +181,7 @@ defmodule ExAIS.Data.Messages do
 
   defp is_aton(update, msg) do
     try do
-      if String.to_integer(msg[:mmsi]) >= 990000000 do
+      if String.to_integer(msg[:mmsi]) >= 990_000_000 do
         update
         |> Map.put(:type, 10)
         |> Map.put(:icon_type, 10)
@@ -174,24 +195,32 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_static(msg, current, type_override) do
-    #if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
+    # if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
     reported = msg[:timestamp]
 
     trip =
       if msg[:eta][:day] <= 31 and
-         msg[:eta][:hour] <= 23 and
-         msg[:eta][:minute] <= 59 do
+           msg[:eta][:hour] <= 23 and
+           msg[:eta][:minute] <= 59 do
+        eta = %DateTime{
+          year: reported.year,
+          month: msg[:eta][:month],
+          day: msg[:eta][:day],
+          hour: msg[:eta][:hour],
+          minute: msg[:eta][:minute],
+          second: 0,
+          zone_abbr: "UTC",
+          time_zone: "Etc/UTC",
+          utc_offset: 0,
+          std_offset: 0
+        }
 
-          eta = %DateTime{year: reported.year, month: msg[:eta][:month],
-                    day: msg[:eta][:day], hour: msg[:eta][:hour], minute: msg[:eta][:minute],
-                    second: 0, zone_abbr: "UTC", time_zone: "Etc/UTC", utc_offset: 0, std_offset: 0}
-
-          %{
-            id: msg[:mmsi],
-            eta: eta,
-            destination: msg[:destination],
-            timestamp: msg[:timestamp]
-          }
+        %{
+          id: msg[:mmsi],
+          eta: eta,
+          destination: msg[:destination],
+          timestamp: msg[:timestamp]
+        }
       else
         nil
       end
@@ -205,7 +234,12 @@ defmodule ExAIS.Data.Messages do
       |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
       |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
       |> update_map(:ais_type, msg[:ship_type])
-      |> update_map(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
+      |> update_map(:dimensions, [
+        msg[:dimension_to_bow],
+        msg[:dimension_to_stern],
+        msg[:dimension_to_port],
+        msg[:dimension_to_starboard]
+      ])
       |> update_map(:draught, msg[:draught])
       |> update_map(:source, Map.get(msg, :p, "spire"))
       |> update_map(:timestamp, msg[:timestamp])
@@ -216,12 +250,18 @@ defmodule ExAIS.Data.Messages do
 
   defp process_aton(msg, current) do
     [lon, lat] = [msg[:longitude], msg[:latitude]]
+
     if lat < 90.0 and lat > -90.0 do
       current
       |> Map.put(:id, msg[:mmsi])
       |> Map.put(:name, String.trim(Map.get(msg, :assembled_name, "")))
       |> Map.put(:coordinates, [lon, lat])
-      |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimension_b], msg[:dimension_c], msg[:dimension_d]])
+      |> Map.put(:dimensions, [
+        msg[:dimension_a],
+        msg[:dimension_b],
+        msg[:dimension_c],
+        msg[:dimension_d]
+      ])
       |> Map.put(:aid_type, msg[:aid_type])
       |> Map.put(:type, 0)
       |> Map.put(:source, Map.get(msg, :p, "spire"))
@@ -236,7 +276,7 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_24(msg, current, type_override) do
-    #if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
+    # if msg[:ship_type] == nil, do: Logger.warning("null static data: #{inspect msg}")
     try do
       cond do
         msg[:part_number] == 0 ->
@@ -259,7 +299,12 @@ defmodule ExAIS.Data.Messages do
           |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:ais_type, msg[:ship_type])
-          |> update_map(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
+          |> update_map(:dimensions, [
+            msg[:dimension_a],
+            msg[:dimensions_b],
+            msg[:dimension_c],
+            msg[:dimension_d]
+          ])
           |> update_map(:source, Map.get(msg, :p, "spire"))
           |> update_map(:timestamp, msg[:timestamp])
           |> update_map(:flag, get_country(msg[:mmsi]))
@@ -311,10 +356,10 @@ defmodule ExAIS.Data.Messages do
       String.downcase(String.trim(name))
 
     cond do
-      String.contains?(name_str,"buoy") ->
+      String.contains?(name_str, "buoy") ->
         10
 
-      String.contains?(name_str,"%") ->
+      String.contains?(name_str, "%") ->
         10
 
       true ->
@@ -346,14 +391,22 @@ defmodule ExAIS.Data.Messages do
       type_override
     else
       cond do
-        shipType >= 70 and shipType < 80 -> 2 # Cargo
-        shipType == 30 -> 3 # Fishing
-        (shipType >= 40 and shipType < 50) or shipType == 35 -> 4 # HighSpeed
-        shipType >= 58 and shipType < 70 -> 5 # Passenger
-        shipType >= 80 and shipType < 90 -> 6 # Tanker
-        (shipType >= 50 and shipType < 57) or (shipType >= 31 and shipType < 34) -> 7 # Tug
-        shipType == 36 or shipType == 37 -> 8 # Yacht
-        true -> 1 # Other
+        # Cargo
+        shipType >= 70 and shipType < 80 -> 2
+        # Fishing
+        shipType == 30 -> 3
+        # HighSpeed
+        (shipType >= 40 and shipType < 50) or shipType == 35 -> 4
+        # Passenger
+        shipType >= 58 and shipType < 70 -> 5
+        # Tanker
+        shipType >= 80 and shipType < 90 -> 6
+        # Tug
+        (shipType >= 50 and shipType < 57) or (shipType >= 31 and shipType < 34) -> 7
+        # Yacht
+        shipType == 36 or shipType == 37 -> 8
+        # Other
+        true -> 1
       end
     end
   end
@@ -369,34 +422,59 @@ defmodule ExAIS.Data.Messages do
   def get_country(mmsi) do
     try do
       mmsi_int = String.to_integer(mmsi)
-      flag = cond do
-        String.length(mmsi) == 7 ->
-          Country.get_flag(String.slice(mmsi, 0..2))
 
-        trunc(mmsi_int/100_000_000 )== 8 ->
-          Country.get_flag(String.slice(mmsi, 1..3))
+      flag =
+        cond do
+          String.length(mmsi) == 7 ->
+            Country.get_flag(String.slice(mmsi, 0..2))
 
-        trunc(mmsi_int/1_000_000) == 111 ->
-          Country.get_flag(String.slice(mmsi, 3..5))
+          trunc(mmsi_int / 100_000_000) == 8 ->
+            Country.get_flag(String.slice(mmsi, 1..3))
 
-        trunc(mmsi_int/10_000_000) == 99 ->
-          Country.get_flag(String.slice(mmsi, 2..4))
+          trunc(mmsi_int / 1_000_000) == 111 ->
+            Country.get_flag(String.slice(mmsi, 3..5))
 
-        trunc(mmsi_int/10_000_000) == 98 ->
-          Country.get_flag(String.slice(mmsi, 2..4))
+          trunc(mmsi_int / 10_000_000) == 99 ->
+            Country.get_flag(String.slice(mmsi, 2..4))
 
-        trunc(mmsi_int/1_000_000) == 970 ->
-          Country.get_flag(String.slice(mmsi, 3..5))
-        String.length(mmsi) != 9 ->
+          trunc(mmsi_int / 10_000_000) == 98 ->
+            Country.get_flag(String.slice(mmsi, 2..4))
+
+          trunc(mmsi_int / 1_000_000) == 970 ->
+            Country.get_flag(String.slice(mmsi, 3..5))
+
+          String.length(mmsi) != 9 ->
             ""
-        true ->
-          Country.get_flag(String.slice(mmsi, 0..2))
-      end
-      #if flag == "", do: IO.puts("mmsi: #{inspect mmsi} - flag: #{inspect flag}")
+
+          true ->
+            Country.get_flag(String.slice(mmsi, 0..2))
+        end
+
+      # if flag == "", do: IO.puts("mmsi: #{inspect mmsi} - flag: #{inspect flag}")
       flag
     rescue
       _e ->
-        "PH" # Not an MMSI id so default to national flag
+        # Not an MMSI id so default to national flag
+        "PH"
     end
+  end
+
+  defp init_stats() do
+    %{"spire" =>
+      %{
+        totals: %{"1" => 0, "2" => 0, "3" => 0, "5" => 0, "18" => 0, "21" => 0, "24" => 0, "27" => 0},
+        null: %{"5" => 0, "24" => 0}
+      },
+      "orbcomm" =>
+      %{
+        totals: %{"1" => 0, "2" => 0, "3" => 0, "5" => 0, "18" => 0, "21" => 0, "24" => 0, "27" => 0},
+        null: %{"5" => 0, "24" => 0}
+      },
+      "exactearth" =>
+      %{
+        totals: %{"1" => 0, "2" => 0, "3" => 0, "5" => 0, "18" => 0, "21" => 0, "24" => 0, "27" => 0},
+        null: %{"5" => 0, "24" => 0}
+      },
+    }
   end
 end

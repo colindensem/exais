@@ -2,7 +2,6 @@ defmodule ExAIS.NMEATest do
   use ExUnit.Case
 
   describe "decode sentences" do
-
     test "decode !AIVDM" do
       {:ok, result} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,177KQJ5000G?tO`K>RA1wUbN0TKH,0*5C")
       assert result.talker == "!AI"

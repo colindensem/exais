@@ -42,6 +42,7 @@ defmodule ExAIS.Data.NMEA do
     ]
 
     list = Enum.zip(keys, values)
+
     if list do
       decoded = checksum(Enum.zip(keys, values), :padding)
       computed_checksum = calculate_aivdm_checksum(decoded)
@@ -71,15 +72,13 @@ defmodule ExAIS.Data.NMEA do
   end
 
   defp decode(talker, formatter, values) do
-    IO.inspect("nmea #{inspect talker} #{inspect formatter} #{inspect values}")
+    IO.inspect("nmea #{inspect(talker)} #{inspect(formatter)} #{inspect(values)}")
     {:error, %{}}
   end
 
   # Calculate checksum for !AIVDM / !BSVDM
   defp calculate_aivdm_checksum(list) do
-    "#{String.slice(list[:talker], 1..2)}#{list[:formatter]},#{list[:total]},#{list[:current]},#{
-      list[:sequential]
-    },#{list[:channel]},#{list[:payload]},#{list[:padding]}"
+    "#{String.slice(list[:talker], 1..2)}#{list[:formatter]},#{list[:total]},#{list[:current]},#{list[:sequential]},#{list[:channel]},#{list[:payload]},#{list[:padding]}"
     |> String.to_charlist()
     |> Enum.reduce(0, &bxor/2)
     |> Integer.to_string(16)
@@ -88,9 +87,7 @@ defmodule ExAIS.Data.NMEA do
 
   # Calculate checksum for $GPGLL
   defp calculate_gpgll_checksum(list) do
-    "#{String.slice(list[:talker], 1..2)}#{list[:formatter]},#{list[:latitude]},#{
-      list[:north_south]
-    },#{list[:longitude]},#{list[:east_west]}"
+    "#{String.slice(list[:talker], 1..2)}#{list[:formatter]},#{list[:latitude]},#{list[:north_south]},#{list[:longitude]},#{list[:east_west]}"
     |> String.to_charlist()
     |> Enum.reduce(0, &bxor/2)
     |> Integer.to_string(16)
