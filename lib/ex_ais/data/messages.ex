@@ -83,19 +83,19 @@ defmodule ExAIS.Data.Messages do
         new_state =
           case msg[:msg_type] do
             1 ->
-              put_in(stats, [msg[:p], :totals, "1"], get_in(stats, [msg[:p], :totals, "1"]) + 1)
+              update_stats(stats, msg, "1")
               merge_update(state, process_position(msg, current, type_override))
 
             2 ->
-              put_in(stats, [msg[:p], :totals, "2"], get_in(stats, [msg[:p], :totals, "2"]) + 1)
+              update_stats(stats, msg, "2")
               merge_update(state, process_position(msg, current, type_override))
 
             3 ->
-              put_in(stats, [msg[:p], :totals, "3"], get_in(stats, [msg[:p], :totals, "3"]) + 1)
+              update_stats(stats, msg, "3")
               merge_update(state, process_position(msg, current, type_override))
 
             5 ->
-              put_in(stats, [msg[:p], :totals, "5"], get_in(stats, [msg[:p], :totals, "5"]) + 1)
+              update_stats(stats, msg, "5")
               {trip, vessel} = process_static(msg, current, type_override)
 
               state
@@ -106,22 +106,22 @@ defmodule ExAIS.Data.Messages do
               state
 
             18 ->
-              put_in(stats, [msg[:p], :totals, "18"], get_in(stats, [msg[:p], :totals, "18"]) + 1)
+              update_stats(stats, msg, "18")
               merge_update(state, process_position(msg, current, type_override))
 
             19 ->
               state
 
             21 ->
-              put_in(stats, [msg[:p], :totals, "21"], get_in(stats, [msg[:p], :totals, "21"]) + 1)
+              update_stats(stats, msg, "21")
               merge_update(state, process_aton(msg, current))
 
             24 ->
-              put_in(stats, [msg[:p], :totals, "24"], get_in(stats, [msg[:p], :totals, "24"]) + 1)
+              update_stats(stats, msg, "24")
               merge_update(state, process_24(msg, current, type_override))
 
             27 ->
-              put_in(stats, [msg[:p], :totals, "27"], get_in(stats, [msg[:p], :totals, "27"]) + 1)
+              update_stats(stats, msg, "27")
               merge_update(state, process_position(msg, current, type_override))
 
             _ ->
@@ -456,6 +456,12 @@ defmodule ExAIS.Data.Messages do
       _e ->
         # Not an MMSI id so default to national flag
         "PH"
+    end
+  end
+
+  defp update_stats(stats, msg, key) do
+    if Map.get(msg, :p) do
+      put_in(stats, [msg[:p], :totals, key], get_in(stats, [msg[:p], :totals, key]) + 1)
     end
   end
 
