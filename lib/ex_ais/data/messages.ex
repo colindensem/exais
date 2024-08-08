@@ -204,12 +204,12 @@ defmodule ExAIS.Data.Messages do
       |> update_map(:imo, msg[:imo_number])
       |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
       |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
-      |> Map.put(:ais_type, msg[:ship_type])
-      |> Map.put(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
-      |> Map.put(:draught, msg[:draught])
-      |> Map.put(:source, Map.get(msg, :p, "spire"))
-      |> Map.put(:timestamp, msg[:timestamp])
-      |> Map.put(:flag, get_country(msg[:mmsi]))
+      |> update_map(:ais_type, msg[:ship_type])
+      |> update_map(:dimensions, [msg[:dimension_to_bow], msg[:dimension_to_stern], msg[:dimension_to_port], msg[:dimension_to_starboard]])
+      |> update_map(:draught, msg[:draught])
+      |> update_map(:source, Map.get(msg, :p, "spire"))
+      |> update_map(:timestamp, msg[:timestamp])
+      |> update_map(:flag, get_country(msg[:mmsi]))
 
     {trip, update}
   end
@@ -243,9 +243,9 @@ defmodule ExAIS.Data.Messages do
           current
           |> Map.put(:id, msg[:mmsi])
           |> update_map(:name, Map.get(msg, :name))
-          |> Map.put(:source, Map.get(msg, :p, "spire"))
-          |> Map.put(:timestamp, msg[:timestamp])
-          |> Map.put(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
+          |> update_map(:source, Map.get(msg, :p, "spire"))
+          |> update_map(:timestamp, msg[:timestamp])
+          |> update_map(:flag, Map.get(msg, :flag, get_country(msg[:mmsi])))
           |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:ais_type, msg[:ship_type])
@@ -259,10 +259,10 @@ defmodule ExAIS.Data.Messages do
           |> update_map(:type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:icon_type, msg[:ship_type], Map.get(msg, :name, ""), type_override)
           |> update_map(:ais_type, msg[:ship_type])
-          |> Map.put(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
-          |> Map.put(:source, Map.get(msg, :p, "spire"))
-          |> Map.put(:timestamp, msg[:timestamp])
-          |> Map.put(:flag, get_country(msg[:mmsi]))
+          |> update_map(:dimensions, [msg[:dimension_a], msg[:dimensions_b], msg[:dimension_c], msg[:dimension_d]])
+          |> update_map(:source, Map.get(msg, :p, "spire"))
+          |> update_map(:timestamp, msg[:timestamp])
+          |> update_map(:flag, get_country(msg[:mmsi]))
 
         true ->
           nil
@@ -278,7 +278,7 @@ defmodule ExAIS.Data.Messages do
   # Pattern Matching to update map but ensure
   # we don't over-write valid data with nil data
   #
-  defp update_map(current, key, nil) do
+  defp update_map(current, _key, nil) do
     current
   end
 
