@@ -460,7 +460,7 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp update_stats(stats, msg, key) do
-    if Map.get(msg, :p) do
+    if Enum.member?(["spire", "orbcomm", "exactearth"], Map.get(msg, :p)) do
       put_in(stats, [msg[:p], :totals, key], get_in(stats, [msg[:p], :totals, key]) + 1)
     end
   end
