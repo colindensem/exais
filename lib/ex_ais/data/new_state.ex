@@ -103,10 +103,18 @@ defmodule ExAIS.Data.AisState do
     }
   end
 
+  def update_latest(state, nil, nil) do
+    state
+  end
+
+  def update_latest(state, _provider, nil) do
+    state
+  end
+
   def update_latest(state, provider, timestamp) do
     time = Map.get(state.latest, provider)
 
-    if time do
+    if time != nil do
       case DateTime.compare(timestamp, time) do
         :gt ->
           %AisState{
@@ -125,8 +133,7 @@ defmodule ExAIS.Data.AisState do
           state
       end
     else
-      if provider do
-        %AisState{
+      %AisState{
           vessels: state.vessels,
           position_updates: state.position_updates,
           trips: state.trips,
@@ -134,9 +141,6 @@ defmodule ExAIS.Data.AisState do
           index: state.index,
           latest: Map.put(state.latest, provider, timestamp)
         }
-      else
-        state
-      end
     end
   end
 end
