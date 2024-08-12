@@ -40,14 +40,16 @@ defmodule ExAIS.Decoder do
         start = System.monotonic_time()
         {new_decoded, groups, latest} = decode_messages(msgs, state)
 
-        :telemetry.execute(
-          [:portal, :decoder, :decode_time],
-          %{
-            duration:
-              System.convert_time_unit(System.monotonic_time() - start, :native, :millisecond)
-          },
-          %{}
-        )
+        if Mix.env() != :test do
+          :telemetry.execute(
+            [:portal, :decoder, :decode_time],
+            %{
+              duration:
+                System.convert_time_unit(System.monotonic_time() - start, :native, :millisecond)
+            },
+            %{}
+          )
+        end
 
         {:decoded, new_decoded, groups, latest}
       end
@@ -121,7 +123,7 @@ defmodule ExAIS.Decoder do
     {:noreply, state}
   end
 
-  def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
+  def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
     Logger.warning("AisDecoder, got :DOWN #{inspect(reason)}")
     {:noreply, state}
   end

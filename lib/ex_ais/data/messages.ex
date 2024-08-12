@@ -65,76 +65,77 @@ defmodule ExAIS.Data.Messages do
     stats = init_stats()
 
     Enum.reduce(msgs, %{state: state, stats: stats}, fn x, acc ->
-      process_message(x, acc, type_override)
+      process_message(Map.get(x, :teimstamp), x, acc, type_override)
     end)
   end
 
-  defp process_message(msg, %{state: state, stats: stats}, type_override) do
-    if Map.get(msg, :timestamp) do
-      key = msg[:mmsi]
-      current = Map.get(state.vessels, key, @new_entity)
+  defp process_message(%DateTime{} = timestamp, msg, %{state: state, stats: stats}, type_override) do
+    key = msg[:mmsi]
+    current = Map.get(state.vessels, key, @new_entity)
 
-      state = AisState.update_latest(state, msg[:p], msg[:timestamp])
+    state = AisState.update_latest(state, msg[:p], timestamp)
 
-      current_time = Map.get(current, :timestamp, DateTime.from_unix!(0))
-      current_time = if !current_time, do: DateTime.from_unix!(0), else: current_time
+    current_time = Map.get(current, :timestamp, DateTime.from_unix!(0))
+    current_time = if !current_time, do: DateTime.from_unix!(0), else: current_time
 
-      if DateTime.diff(msg[:timestamp], current_time) > 0 do
-        new_state =
-          case msg[:msg_type] do
-            1 ->
-              update_stats(stats, msg, "1")
-              merge_update(state, process_position(msg, current, type_override))
+    if DateTime.diff(timestamp, current_time) > 0 do
+      new_state =
+        case msg[:msg_type] do
+          1 ->
+            update_stats(stats, msg, "1")
+            merge_update(state, process_position(msg, current, type_override))
 
-            2 ->
-              update_stats(stats, msg, "2")
-              merge_update(state, process_position(msg, current, type_override))
+          2 ->
+            update_stats(stats, msg, "2")
+            merge_update(state, process_position(msg, current, type_override))
 
-            3 ->
-              update_stats(stats, msg, "3")
-              merge_update(state, process_position(msg, current, type_override))
+          3 ->
+            update_stats(stats, msg, "3")
+            merge_update(state, process_position(msg, current, type_override))
 
-            5 ->
-              update_stats(stats, msg, "5")
-              {trip, vessel} = process_static(msg, current, type_override)
+          5 ->
+            update_stats(stats, msg, "5")
+            {trip, vessel} = process_static(msg, current, type_override)
 
-              state
-              |> merge_update(vessel)
-              |> merge_trip(trip)
+            state
+            |> merge_update(vessel)
+            |> merge_trip(trip)
 
-            9 ->
-              state
+          9 ->
+            state
 
-            18 ->
-              update_stats(stats, msg, "18")
-              merge_update(state, process_position(msg, current, type_override))
+          18 ->
+            update_stats(stats, msg, "18")
+            merge_update(state, process_position(msg, current, type_override))
 
-            19 ->
-              state
+          19 ->
+            state
 
-            21 ->
-              update_stats(stats, msg, "21")
-              merge_update(state, process_aton(msg, current))
+          21 ->
+            update_stats(stats, msg, "21")
+            merge_update(state, process_aton(msg, current))
 
-            24 ->
-              update_stats(stats, msg, "24")
-              merge_update(state, process_24(msg, current, type_override))
+          24 ->
+            update_stats(stats, msg, "24")
+            merge_update(state, process_24(msg, current, type_override))
 
-            27 ->
-              update_stats(stats, msg, "27")
-              merge_update(state, process_position(msg, current, type_override))
+          27 ->
+            update_stats(stats, msg, "27")
+            merge_update(state, process_position(msg, current, type_override))
 
-            _ ->
-              state
-          end
+          _ ->
+            state
+        end
 
-        %{state: new_state, stats: stats}
-      else
-        %{state: state, stats: stats}
-      end
+      %{state: new_state, stats: stats}
     else
       %{state: state, stats: stats}
     end
+  end
+
+  # Pattern match timestamps that aren't %DateTime{}
+  defp process_message(_timestamp, _msg, %{state: state, stats: stats}, _type_override) do
+    %{state: state, stats: stats}
   end
 
   defp process_position(msg, current, type_override) do

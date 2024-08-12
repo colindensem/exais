@@ -107,11 +107,8 @@ defmodule ExAIS.Data.AisState do
     state
   end
 
-  def update_latest(state, _provider, nil) do
-    state
-  end
-
-  def update_latest(state, provider, timestamp) do
+  def update_latest(state, provider, %DateTime{} = timestamp) do
+    IO.puts("#{inspect provider} #{inspect timestamp}")
     time = Map.get(state.latest, provider)
 
     if time != nil do
@@ -142,5 +139,9 @@ defmodule ExAIS.Data.AisState do
           latest: Map.put(state.latest, provider, timestamp)
         }
     end
+  end
+
+  def update_latest(state, _provider, _val) do
+    state
   end
 end
