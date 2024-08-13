@@ -108,7 +108,6 @@ defmodule ExAIS.Data.AisState do
   end
 
   def update_latest(state, provider, %DateTime{} = timestamp) do
-    IO.puts("#{inspect provider} #{inspect timestamp}")
     time = Map.get(state.latest, provider)
 
     if time != nil do
