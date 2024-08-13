@@ -65,18 +65,19 @@ defmodule ExAIS.Data.Messages do
     stats = init_stats()
 
     Enum.reduce(msgs, %{state: state, stats: stats}, fn x, acc ->
-      process_message(Map.get(x, :teimstamp), x, acc, type_override)
+      process_message(Map.get(x, :timestamp), x, acc, type_override)
     end)
   end
 
   defp process_message(%DateTime{} = timestamp, msg, %{state: state, stats: stats}, type_override) do
+    IO.puts("process_message #{inspect msg}")
     key = msg[:mmsi]
     current = Map.get(state.vessels, key, @new_entity)
 
     state = AisState.update_latest(state, msg[:p], timestamp)
 
+    # Get latest timestamp from current vessel state
     current_time = Map.get(current, :timestamp, DateTime.from_unix!(0))
-    current_time = if !current_time, do: DateTime.from_unix!(0), else: current_time
 
     if DateTime.diff(timestamp, current_time) > 0 do
       new_state =
