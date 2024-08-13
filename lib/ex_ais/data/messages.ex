@@ -70,7 +70,6 @@ defmodule ExAIS.Data.Messages do
   end
 
   defp process_message(%DateTime{} = timestamp, msg, %{state: state, stats: stats}, type_override) do
-    IO.puts("process_message #{inspect msg}")
     key = msg[:mmsi]
     current = Map.get(state.vessels, key, @new_entity)
 
