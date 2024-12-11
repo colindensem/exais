@@ -24,7 +24,7 @@ defmodule ExAIS.Decoder do
   end
 
   def init(state) do
-    Logger.info("Ais Decoder init")
+    Logger.info("Ais Decoder init #{inspect(state)}")
     schedule_work(:stats, 10)
     {:ok, state}
   end
@@ -33,9 +33,9 @@ defmodule ExAIS.Decoder do
     IO.inspect(reason, label: "decoder terminate reason")
   end
 
-  def handle_cast({:decode, msgs}, state) do
+  def handle_cast({:decode, msgs}, %{supervisor: task_supervisor} = state) do
     Task.Supervisor.async_nolink(
-      Portal.TaskSupervisor,
+      task_supervisor,
       fn ->
         start = System.monotonic_time()
         {new_decoded, groups, latest} = decode_messages(msgs, state)
@@ -58,9 +58,9 @@ defmodule ExAIS.Decoder do
     {:noreply, state}
   end
 
-  def handle_call({:decode, msgs}, _from, state) do
+  def handle_call({:decode, msgs}, _from, %{supervisor: task_supervisor} = state) do
     Task.Supervisor.async_nolink(
-      Portal.TaskSupervisor,
+      task_supervisor,
       fn ->
         start = System.monotonic_time()
         {new_decoded, groups, latest} = decode_messages(msgs, state)
@@ -81,13 +81,13 @@ defmodule ExAIS.Decoder do
     {:reply, :ok, state}
   end
 
-  def handle_info({_ref, {:decoded, new_decoded, groups, latest}}, state) do
+  def handle_info({_ref, {:decoded, new_decoded, groups, latest}}, %{processor: processor} = state) do
     decoded = state[:decoded] ++ new_decoded
     count = Enum.count(decoded)
 
     state =
       if count > 10000 do
-        GenServer.call(Map.get(state, :processor), {:decoded, decoded}, :infinity)
+        GenServer.call(processor, {:decoded, decoded}, :infinity)
         :erlang.garbage_collect()
         %{state | decoded: [], count: state[:count] + count}
       else

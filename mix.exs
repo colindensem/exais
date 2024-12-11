@@ -4,7 +4,7 @@ defmodule ExAIS.MixProject do
   def project do
     [
       app: :exais,
-      version: "0.1.12",
+      version: "0.1.13",
       elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -23,7 +23,7 @@ defmodule ExAIS.MixProject do
   defp deps do
     [
       {:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
-      {:telemetry_metrics, "~> 0.6"}
+      {:telemetry_metrics, "~> 1.0"}
     ]
   end
 
