@@ -38,15 +38,16 @@ defmodule ExAIS.Data.Ais do
       attributes = parse_message(msg_type, tail)
 
       {:ok,
-       Map.merge(
-         %{msg_type: msg_type},
-         if Map.has_key?(attributes, :mmsi) do
-           # Convert MMSIs to strings
-           %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
-         else
-           attributes
-         end
-       )}
+        Map.merge(
+          %{msg_type: msg_type},
+          if Map.has_key?(attributes, :mmsi) do
+            # Convert MMSIs to strings
+            %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
+          else
+            attributes
+          end
+        )}
+
     rescue
       e in MatchError ->
         IO.puts(
@@ -56,10 +57,6 @@ defmodule ExAIS.Data.Ais do
 
         {:invalid, %{}}
     end
-
-    # else
-    #  {:ignore, %{}}
-    # end
   end
 
   # Class A AIS Position Report (Messages 1, 2, and 3)
@@ -128,7 +125,9 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessagesAStatic
   # !AIVDM,2,1,9,B,53qH`N0286j=<p8b220ti`62222222222222221?9p;554oF0;B3k51CPEH8,0*58
   # !AIVDM,2,2,9,B,88888888880,2*2E
-  defp parse_message(msg_type, payload) when msg_type == 5 do
+  defguard valid_type_5(msg_type, payload) when msg_type == 5 and bit_size(payload) >= 418
+
+  defp parse_message(msg_type, payload) when valid_type_5(msg_type, payload) do
     <<repeat_indicator::2, mmsi::30, ais_version_indicator::2, imo_number::30, call_sign::42,
       name::120, ship_type::8, dimension_to_bow::9, dimension_to_stern::9, dimension_to_port::6,
       dimension_to_starboard::6, position_fix_type::4, eta_month::4, eta_day::5, eta_hour::5,
@@ -941,6 +940,10 @@ defmodule ExAIS.Data.Ais do
   # Message 28 to 63 are reserved for future use
   # 45 appeared in the NMEA sample
   defp parse_message(msg_type, _payload) when msg_type in 28..63 do
+    %{}
+  end
+
+  defp parse_message(_msg_type, _payload) do
     %{}
   end
 end

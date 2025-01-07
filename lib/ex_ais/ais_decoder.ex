@@ -349,6 +349,7 @@ defmodule ExAIS.Decoder do
           {:error, sentence}
 
         sentence[:total] == "1" ->
+
           {state, attributes} = Ais.parse(sentence.payload, sentence.padding)
 
           sentence = Map.merge(attributes, sentence)
@@ -363,8 +364,8 @@ defmodule ExAIS.Decoder do
           {:error, {:incomplete, sentence}}
       end
     rescue
-      _e ->
-        Logger.error("error deocding NMEA #{inspect(state)} #{inspect(sentence)}")
+      e ->
+        Logger.error("error deocding NMEA #{inspect(state)} #{inspect(sentence)} #{inspect e}")
         {:error, sentence}
     end
   end
