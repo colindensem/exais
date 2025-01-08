@@ -28,7 +28,7 @@ defmodule ExAIS.MessagesTest do
 
   describe "Turns parsed sentences into AisState updates" do
     test "process_messages/2 processes a single message", %{decoded: decoded, state: state} do
-      %{state: state, stats: stats} =
+      %{state: state, stats: _stats} =
         ExAIS.Data.Messages.process_messages(
           Enum.take(decoded, 1),
           state
@@ -39,7 +39,7 @@ defmodule ExAIS.MessagesTest do
     end
 
     test "process_messages/2 processes a list of message", %{decoded: decoded, state: state} do
-      %{state: state, stats: stats} =
+      %{state: state, stats: _stats} =
         ExAIS.Data.Messages.process_messages(
           decoded,
           state

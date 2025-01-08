@@ -59,6 +59,8 @@ defmodule ExAIS.Data.Ais do
     end
   end
 
+  defguard valid_type_5(msg_type, payload) when msg_type == 5 and bit_size(payload) >= 418
+
   # Class A AIS Position Report (Messages 1, 2, and 3)
   # https://www.navcen.uscg.gov/?pageName=AISMessagesA
   # !AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52  ID 1
@@ -125,8 +127,6 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessagesAStatic
   # !AIVDM,2,1,9,B,53qH`N0286j=<p8b220ti`62222222222222221?9p;554oF0;B3k51CPEH8,0*58
   # !AIVDM,2,2,9,B,88888888880,2*2E
-  defguard valid_type_5(msg_type, payload) when msg_type == 5 and bit_size(payload) >= 418
-
   defp parse_message(msg_type, payload) when valid_type_5(msg_type, payload) do
     <<repeat_indicator::2, mmsi::30, ais_version_indicator::2, imo_number::30, call_sign::42,
       name::120, ship_type::8, dimension_to_bow::9, dimension_to_stern::9, dimension_to_port::6,

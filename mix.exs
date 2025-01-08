@@ -23,7 +23,7 @@ defmodule ExAIS.MixProject do
   defp deps do
     [
       {:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
-      {:telemetry_metrics, "~> 1.0"}
+      {:telemetry, "~> 1.0"}
     ]
   end
 
