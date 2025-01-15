@@ -20,6 +20,7 @@ defmodule ExAIS.Decoder do
   }
 
   def start_link(opts) do
+    Logger.info("Starting #{opts.name} feed")
     GenServer.start_link(__MODULE__, Map.merge(opts, @initial_state), name: opts.name)
   end
 
