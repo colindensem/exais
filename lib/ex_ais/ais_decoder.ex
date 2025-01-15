@@ -20,7 +20,7 @@ defmodule ExAIS.Decoder do
   }
 
   def start_link(opts) do
-    GenServer.start_link(__MODULE__, Map.merge(opts, @initial_state), name: :aisdecoder)
+    GenServer.start_link(__MODULE__, Map.merge(opts, @initial_state), name: opts.name)
   end
 
   def init(state) do
@@ -30,7 +30,7 @@ defmodule ExAIS.Decoder do
   end
 
   def terminate(reason, _state) do
-    IO.inspect(reason, label: "decoder terminate reason")
+    Logger.warning("decoder terminate reason: #{inspect(reason)}")
   end
 
   def handle_cast({:decode, msgs}, %{supervisor: task_supervisor} = state) do
@@ -84,9 +84,8 @@ defmodule ExAIS.Decoder do
   def handle_info({_ref, {:decoded, new_decoded, groups, latest}}, %{processor: processor} = state) do
     decoded = state[:decoded] ++ new_decoded
     count = Enum.count(decoded)
-
     state =
-      if count > 10000 do
+      if count > state[:batch_size] do
         GenServer.call(processor, {:decoded, decoded}, :infinity)
         :erlang.garbage_collect()
         %{state | decoded: [], count: state[:count] + count}
@@ -142,7 +141,6 @@ defmodule ExAIS.Decoder do
   def decode_message(msg, %{groups: groups, latest: latest}) do
     if Regex.match?(~r/\\([a-z]:\w.{1,15})+\\!AIVDM,.{1,100},\d\*.{2}/, msg) do
       # Complete message sentence
-      # IO.puts("#{inspect msg}")
       case check_sum(msg) do
         {:ok, []} ->
           {nil, %{groups: groups, latest: latest}}
@@ -397,7 +395,7 @@ defmodule ExAIS.Decoder do
       sum == chk
     rescue
       _e ->
-        IO.puts("checksum error: #{inspect(fields)}")
+        Logger.warning("checksum error: #{inspect(fields)}")
         false
     end
   end

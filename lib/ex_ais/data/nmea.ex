@@ -1,6 +1,8 @@
 defmodule ExAIS.Data.NMEA do
   import Bitwise
 
+  require Logger
+
   @moduledoc """
   Handle the parsing of the NMEA sentence.
   """
@@ -71,8 +73,8 @@ defmodule ExAIS.Data.NMEA do
     end
   end
 
-  defp decode(talker, formatter, values) do
-    IO.inspect("nmea #{inspect(talker)} #{inspect(formatter)} #{inspect(values)}")
+  defp decode(talker, formatter, _values) do
+    Logger.warning("unsupported talker/formatter: #{talker} #{formatter}")
     {:error, %{}}
   end
 
