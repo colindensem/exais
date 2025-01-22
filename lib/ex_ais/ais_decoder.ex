@@ -1,6 +1,23 @@
 defmodule ExAIS.Decoder do
   @moduledoc """
-  Documentation for `Ais.Decode`.
+  Documentation for `ExAIS.Decoder`.
+
+  Decoder is a Genserver that receives messages and decodes them into a state.
+
+  By default Decoders decode all Ais message types but can be initialized with
+  a list of message types to decode if you want to restrict the scope.
+
+  Example:
+
+    %{
+      id: :satdecoder,
+      module: ExAIS.Decoder,
+      name: :satdecoder,
+      batch_size: 10_000,
+      processor: :satprocessor,
+      supervisor: Portal.TaskSupervisor,
+      msg_types: [1, 2, 3]
+    }
   """
   require Logger
   import Bitwise
@@ -35,11 +52,13 @@ defmodule ExAIS.Decoder do
   end
 
   def handle_cast({:decode, msgs}, %{supervisor: task_supervisor} = state) do
+    msg_types = Map.get(state, :msg_types, Ais.all_msg_types())
+
     Task.Supervisor.async_nolink(
       task_supervisor,
       fn ->
         start = System.monotonic_time()
-        {new_decoded, groups, latest} = decode_messages(msgs, state)
+        {new_decoded, groups, latest} = decode_messages(msgs, state, msg_types)
 
         if Mix.env() != :test do
           :telemetry.execute(
@@ -60,11 +79,13 @@ defmodule ExAIS.Decoder do
   end
 
   def handle_call({:decode, msgs}, _from, %{supervisor: task_supervisor} = state) do
+    msg_types = Map.get(state, :msg_types, Ais.all_msg_types())
+
     Task.Supervisor.async_nolink(
       task_supervisor,
       fn ->
         start = System.monotonic_time()
-        {new_decoded, groups, latest} = decode_messages(msgs, state)
+        {new_decoded, groups, latest} = decode_messages(msgs, state, msg_types)
 
         :telemetry.execute(
           [:portal, :decoder, :decode_time],
@@ -82,9 +103,13 @@ defmodule ExAIS.Decoder do
     {:reply, :ok, state}
   end
 
-  def handle_info({_ref, {:decoded, new_decoded, groups, latest}}, %{processor: processor} = state) do
+  def handle_info(
+        {_ref, {:decoded, new_decoded, groups, latest}},
+        %{processor: processor} = state
+      ) do
     decoded = state[:decoded] ++ new_decoded
     count = Enum.count(decoded)
+
     state =
       if count > state[:batch_size] do
         GenServer.call(processor, {:decoded, decoded}, :infinity)
@@ -128,10 +153,10 @@ defmodule ExAIS.Decoder do
     {:noreply, state}
   end
 
-  def decode_messages(msgs, state) do
+  def decode_messages(msgs, state, msg_types) do
     {decoded, %{groups: groups, latest: latest}} =
       Enum.map_reduce(msgs, %{groups: state[:groups], latest: state[:latest]}, fn m, acc ->
-        decode_message(m, acc)
+        decode_message(m, acc, msg_types)
       end)
 
     _failed = Enum.filter(decoded, &is_nil(&1))
@@ -139,7 +164,7 @@ defmodule ExAIS.Decoder do
     {decoded, groups, latest}
   end
 
-  def decode_message(msg, %{groups: groups, latest: latest}) do
+  def decode_message(msg, %{groups: groups, latest: latest}, msg_types) do
     if Regex.match?(~r/\\([a-z]:\w.{1,15})+\\!AIVDM,.{1,100},\d\*.{2}/, msg) do
       # Complete message sentence
       case check_sum(msg) do
@@ -148,7 +173,7 @@ defmodule ExAIS.Decoder do
 
         {:ok, parts} ->
           if Regex.match?(~r/,g:/, Enum.at(parts, 0)) do
-            {decoded, groups} = process_group(parts, groups)
+            {decoded, groups} = process_group(parts, groups, msg_types)
 
             if decoded do
               {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
@@ -156,7 +181,7 @@ defmodule ExAIS.Decoder do
               {decoded, %{groups: groups, latest: latest}}
             end
           else
-            decoded = decode_parts(parts)
+            decoded = decode_parts(parts, msg_types)
             {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
           end
       end
@@ -178,7 +203,7 @@ defmodule ExAIS.Decoder do
     end
   end
 
-  def process_group(parts, groups) do
+  def process_group(parts, groups, msg_types) do
     tags = decode_tags(Enum.at(parts, 0))
     [n, s, id] = String.split(tags[:g], "-")
     num = String.to_integer(n)
@@ -216,7 +241,7 @@ defmodule ExAIS.Decoder do
               {_, new_provider_groups} = Map.pop(provider_groups, id)
               new_groups = Map.put(groups, tags[:p], new_provider_groups)
 
-              case decode_nmea(new_msg) do
+              case decode_nmea(new_msg, msg_types) do
                 {:ok, data} ->
                   {Map.merge(group[:tag], data), new_groups}
 
@@ -296,10 +321,10 @@ defmodule ExAIS.Decoder do
     end
   end
 
-  defp decode_parts(parts) do
+  defp decode_parts(parts, msg_types) do
     tags = decode_tags(Enum.at(parts, 0))
 
-    case decode_nmea(Enum.at(parts, 1)) do
+    case decode_nmea(Enum.at(parts, 1), msg_types) do
       {:ok, message} -> Map.merge(tags, message)
       _ -> nil
     end
@@ -339,7 +364,7 @@ defmodule ExAIS.Decoder do
     end
   end
 
-  def decode_nmea(str) do
+  def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)
 
     try do
@@ -348,8 +373,7 @@ defmodule ExAIS.Decoder do
           {:error, sentence}
 
         sentence[:total] == "1" ->
-
-          {state, attributes} = Ais.parse(sentence.payload, sentence.padding)
+          {state, attributes} = Ais.parse(sentence.payload, sentence.padding, msg_types)
 
           sentence = Map.merge(attributes, sentence)
 
@@ -364,7 +388,7 @@ defmodule ExAIS.Decoder do
       end
     rescue
       e ->
-        Logger.error("error deocding NMEA #{inspect(state)} #{inspect(sentence)} #{inspect e}")
+        Logger.error("error decoding NMEA #{inspect(state)} #{inspect(sentence)} #{inspect(e)}")
         {:error, sentence}
     end
   end

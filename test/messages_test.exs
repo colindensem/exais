@@ -3,16 +3,22 @@ defmodule ExAIS.MessagesTest do
 
   import ExAIS.MessageFixtures
 
+  alias ExAIS.Data.Ais
+
   setup do
     {decoded, _groups, _latest} =
-      ExAIS.Decoder.decode_messages(messages(), %{
-        # Used to handle fragmented messages
-        fragment: "",
-        decoded: [],
-        # Map of list of grouped messages keyed by group id
-        groups: %{},
-        latest: DateTime.from_unix!(0)
-      })
+      ExAIS.Decoder.decode_messages(
+        messages(),
+        %{
+          # Used to handle fragmented messages
+          fragment: "",
+          decoded: [],
+          # Map of list of grouped messages keyed by group id
+          groups: %{},
+          latest: DateTime.from_unix!(0)
+        },
+        Ais.all_msg_types()
+      )
 
     state = %ExAIS.Data.AisState{
       vessels: %{},
@@ -208,6 +214,44 @@ defmodule ExAIS.MessagesTest do
       assert new.vessels["239951600"].callsign == "SVA6986"
       assert new.vessels["239951600"].name == "HYDRA VIII"
       assert new.vessels["239951600"].type == 8
+    end
+  end
+
+  describe "Only decodes specified message types" do
+    test "Only decodes specified message types [1, 2, 3]", %{state: state} do
+      {decoded, _groups, _latest} =
+        ExAIS.Decoder.decode_messages(
+          messages(),
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          [1, 2, 3]
+        )
+
+      assert Enum.count(decoded) == 11
+    end
+
+    test "Only decodes specified message types [18]", %{state: state} do
+      {decoded, _groups, _latest} =
+        ExAIS.Decoder.decode_messages(
+          messages(),
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          [18]
+        )
+
+      assert Enum.count(decoded) == 6
     end
   end
 end

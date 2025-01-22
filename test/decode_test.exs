@@ -3,6 +3,8 @@ defmodule ExAIS.DecodeTest do
 
   import ExAIS.MessageFixtures
 
+  alias ExAIS.Data.Ais
+
   setup do
     messages = messages()
     %{messages: messages}
@@ -11,14 +13,18 @@ defmodule ExAIS.DecodeTest do
   describe "decode messages" do
     test "all", %{messages: messages} do
       {decoded, _groups, latest} =
-        ExAIS.Decoder.decode_messages(messages, %{
-          # Used to handle fragmented messages
-          fragment: "",
-          decoded: [],
-          # Map of list of grouped messages keyed by group id
-          groups: %{},
-          latest: DateTime.from_unix!(0)
-        })
+        ExAIS.Decoder.decode_messages(
+          messages,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
 
       assert Enum.count(decoded) == 29
       assert latest == DateTime.from_unix!(1_692_784_374)
@@ -40,7 +46,8 @@ defmodule ExAIS.DecodeTest do
             # Map of list of grouped messages keyed by group id
             groups: %{},
             latest: DateTime.from_unix!(0)
-          }
+          },
+          Ais.all_msg_types()
         )
 
       assert Enum.count(decoded) == 2
@@ -51,7 +58,8 @@ defmodule ExAIS.DecodeTest do
       {_, %{groups: groups, latest: _latest}} =
         ExAIS.Decoder.decode_message(
           "\\p:orbcomm,g:1-2-8641949,s:terrestrial,c:1694768536*17\\!AIVDM,2,1,9,A,53m9Vi400000hULJ220TpLD8u8N10h5@uF22220l0p:3240Ht03lk3iRSlQ1,0*0A",
-          %{groups: %{}, latest: DateTime.from_unix(0)}
+          %{groups: %{}, latest: DateTime.from_unix(0)},
+          Ais.all_msg_types()
         )
 
       assert Map.has_key?(groups, "orbcomm")
@@ -77,7 +85,10 @@ defmodule ExAIS.DecodeTest do
 
     test "decode type 1" do
       {result, sentence} =
-        ExAIS.Decoder.decode_nmea("!AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52")
+        ExAIS.Decoder.decode_nmea(
+          "!AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52",
+          Ais.all_msg_types()
+        )
 
       assert result == :ok
       assert sentence.mmsi == "228237700"

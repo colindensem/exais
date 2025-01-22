@@ -13,8 +13,39 @@ defmodule ExAIS.Data.Ais do
   # See https://www.itu.int/dms_pubrec/itu-r/rec/m/R-REC-M.1371-1-200108-S!!PDF-E.pdf
   # for packet formats
 
-  @spec parse(binary(), non_neg_integer()) :: {:invalid, %{}} | {:ok, any()}
-  def parse(payload, padding) do
+  @all_msg_types [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ]
+  def all_msg_types, do: @all_msg_types
+
+  @spec parse(binary(), non_neg_integer(), [non_neg_integer()]) :: {:invalid, %{}} | {:ok, any()}
+  def parse(payload, padding, msg_types \\ @all_msg_types) do
     orig_payload = payload
     payload = SixBit.decode(payload)
 
@@ -33,29 +64,31 @@ defmodule ExAIS.Data.Ais do
     end
 
     # Only interested in these message types
-    # if msg_type in [1, 2, 3, 5, 18, 21, 24, 25, 27] do
-    try do
-      attributes = parse_message(msg_type, tail)
+    if msg_type in msg_types do
+      try do
+        attributes = parse_message(msg_type, tail)
 
-      {:ok,
-        Map.merge(
-          %{msg_type: msg_type},
-          if Map.has_key?(attributes, :mmsi) do
-            # Convert MMSIs to strings
-            %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
-          else
-            attributes
-          end
-        )}
+        {:ok,
+         Map.merge(
+           %{msg_type: msg_type},
+           if Map.has_key?(attributes, :mmsi) do
+             # Convert MMSIs to strings
+             %{attributes | mmsi: Integer.to_string(attributes[:mmsi])}
+           else
+             attributes
+           end
+         )}
+      rescue
+        e in MatchError ->
+          IO.puts(
+            "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect(byte_size(orig_payload))}: " <>
+              Exception.message(e) <> Exception.format_stacktrace(nil)
+          )
 
-    rescue
-      e in MatchError ->
-        IO.puts(
-          "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect(byte_size(orig_payload))}: " <>
-            Exception.message(e) <> Exception.format_stacktrace(nil)
-        )
-
-        {:invalid, %{}}
+          {:invalid, %{}}
+      end
+    else
+      {:invalid, %{}}
     end
   end
 

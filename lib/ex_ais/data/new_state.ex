@@ -1,4 +1,6 @@
 defmodule ExAIS.Data.AisState do
+  require Logger
+
   alias ExAIS.Data.AisState
   alias GeoUtils.QuadKeyTree
 
@@ -67,6 +69,51 @@ defmodule ExAIS.Data.AisState do
     end
   end
 
+  @doc """
+  Update only the states index and position_updates with the new update.
+  Doesn't make changes to state.vessels
+  args:
+    state - the current state
+    update - the new update
+    is_new - true if the update is a new vessel, false if it is an update to an existing vessel
+  """
+  def update_index(state, update, is_new) do
+    if is_nil(update.quadkey) do
+      %AisState{
+        vessels: state.vessels,
+        position_updates: state.position_updates,
+        trips: state.trips,
+        trip_updates: state.trip_updates,
+        index: state.index,
+        latest: state.latest
+      }
+    else
+      try do
+        index =
+          if !is_new and update.quadkey do
+            QuadKeyTree.remove(state.index, update.quadkey, update.id)
+          else
+            state.index
+          end
+
+        new = %AisState{
+          vessels: state.vessels,
+          position_updates: state.position_updates ++ [update],
+          trips: state.trips,
+          trip_updates: state.trip_updates,
+          index: QuadKeyTree.insert(index, update.quadkey, update.id),
+          latest: state.latest
+        }
+
+        new
+      rescue
+        e ->
+          Logger.debug("AisState.update_index error: #{inspect(e)}")
+          state
+      end
+    end
+  end
+
   def add_trip(state, trip) do
     %AisState{
       vessels: state.vessels,
@@ -103,6 +150,9 @@ defmodule ExAIS.Data.AisState do
     }
   end
 
+  #
+  # Update the latest timestamp for a provider
+  #
   def update_latest(state, nil, nil) do
     state
   end
@@ -130,13 +180,13 @@ defmodule ExAIS.Data.AisState do
       end
     else
       %AisState{
-          vessels: state.vessels,
-          position_updates: state.position_updates,
-          trips: state.trips,
-          trip_updates: state.trip_updates,
-          index: state.index,
-          latest: Map.put(state.latest, provider, timestamp)
-        }
+        vessels: state.vessels,
+        position_updates: state.position_updates,
+        trips: state.trips,
+        trip_updates: state.trip_updates,
+        index: state.index,
+        latest: Map.put(state.latest, provider, timestamp)
+      }
     end
   end
 
