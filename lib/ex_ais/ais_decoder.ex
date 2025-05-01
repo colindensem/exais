@@ -195,6 +195,9 @@ defmodule ExAIS.Decoder do
       nil ->
         latest
 
+      %{timestamp: nil} ->
+        latest
+
       _ ->
         case DateTime.compare(decoded[:timestamp], latest) do
           :gt -> decoded[:timestamp]
