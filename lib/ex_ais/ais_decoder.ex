@@ -190,19 +190,16 @@ defmodule ExAIS.Decoder do
     end
   end
 
+  defp update_latest(latest, nil), do: latest
+  defp update_latest(latest, %{timestamp: nil}), do: latest
   defp update_latest(latest, decoded) do
-    case decoded do
-      nil ->
-        latest
-
-      %{timestamp: nil} ->
-        latest
-
-      _ ->
-        case DateTime.compare(decoded[:timestamp], latest) do
-          :gt -> decoded[:timestamp]
-          _ -> latest
-        end
+    if decoded[:timestamp] do
+      case DateTime.compare(decoded[:timestamp], latest) do
+        :gt -> decoded[:timestamp]
+        _ -> latest
+      end
+    else
+      latest
     end
   end
 
@@ -341,31 +338,22 @@ defmodule ExAIS.Decoder do
   #    %{"c" => ~U[2023-04-30 11:19:52Z], "s" => "terrestrial"}
   #
   def decode_tags(tag_str) do
-    tags =
-      Regex.named_captures(
-        ~r/(p:(?<p>\w+))?(,?s:(?<ss>.[0-9a-zA-Z]+))?(,?g:(?<g>[0-9]-[0-9]-[0-9]+))?(,?s:(?<s>.[0-9a-zA-Z]+))?(,q:(?<q>\w+))?(,?c:(?<c>\d+))?/,
-        tag_str
-      )
-
-    # Convert keys to atoms
-    tags = for {key, val} <- tags, into: %{}, do: {String.to_atom(key), val}
-
-    tags =
-      if Map.has_key?(tags, :ss) do
-        tags |> Map.put(:s, Map.get(tags, :ss)) |> Map.delete(:ss)
-      end
-
-    if Map.has_key?(tags, :c) do
-      try do
-        Map.put(tags, :timestamp, DateTime.from_unix!(String.to_integer(Map.get(tags, :c))))
-      rescue
-        _e ->
-          tags
-      end
-    else
-      tags
-    end
+    # Remove the checksum part before parsing
+    tag_str
+    |> String.split("*")
+    |> List.first()
+    |> String.split(",")
+    |> Enum.reduce(%{}, fn x, acc ->
+      Map.merge(acc, decode_tag(String.split(x, ":")))
+    end)
   end
+
+  defp decode_tag(["p", val]), do: %{p: val}
+  defp decode_tag(["g", val]), do: %{g: val}
+  defp decode_tag(["s", val]), do: %{s: val}
+  defp decode_tag(["c", val]), do: %{c: val, timestamp: DateTime.from_unix!(String.to_integer(val))}
+  defp decode_tag(["q", val]), do: %{q: val}
+  defp decode_tag(["t", val]), do: %{t: val}
 
   def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)

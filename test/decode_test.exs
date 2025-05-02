@@ -75,6 +75,21 @@ defmodule ExAIS.DecodeTest do
       tags = ExAIS.Decoder.decode_tags("p:orbcomm,g:2-2-40348012*55")
       assert tags.p == "orbcomm"
     end
+
+    test "decode all tags" do
+      tags = ExAIS.Decoder.decode_tags("p:spire,g:1-2-40348012,s:terrestrial,c:1692880962*22")
+
+      assert tags.p == "spire"
+      assert tags.g == "1-2-40348012"
+      assert tags.s == "terrestrial"
+      assert tags.c == "1692880962"
+
+      tags = ExAIS.Decoder.decode_tags("p:exact,s: ,c:1746184480,t:LIVE*6D")
+
+      assert tags.p == "exact"
+      assert tags.s == " "
+      assert tags.c == "1746184480"
+    end
   end
 
   describe "decode nmea/1" do
