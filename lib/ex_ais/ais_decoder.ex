@@ -192,6 +192,7 @@ defmodule ExAIS.Decoder do
 
   defp update_latest(latest, nil), do: latest
   defp update_latest(latest, %{timestamp: nil}), do: latest
+
   defp update_latest(latest, decoded) do
     if decoded[:timestamp] do
       case DateTime.compare(decoded[:timestamp], latest) do
@@ -351,7 +352,10 @@ defmodule ExAIS.Decoder do
   defp decode_tag(["p", val]), do: %{p: val}
   defp decode_tag(["g", val]), do: %{g: val}
   defp decode_tag(["s", val]), do: %{s: val}
-  defp decode_tag(["c", val]), do: %{c: val, timestamp: DateTime.from_unix!(String.to_integer(val))}
+
+  defp decode_tag(["c", val]),
+    do: %{c: val, timestamp: DateTime.from_unix!(String.to_integer(val))}
+
   defp decode_tag(["q", val]), do: %{q: val}
   defp decode_tag(["t", val]), do: %{t: val}
 
