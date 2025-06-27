@@ -218,7 +218,7 @@ defmodule ExAIS.MessagesTest do
   end
 
   describe "Only decodes specified message types" do
-    test "Only decodes specified message types [1, 2, 3]", %{state: state} do
+    test "Only decodes specified message types [1, 2, 3]", %{state: _state} do
       {decoded, _groups, _latest} =
         ExAIS.Decoder.decode_messages(
           messages(),
@@ -236,7 +236,7 @@ defmodule ExAIS.MessagesTest do
       assert Enum.count(decoded) == 11
     end
 
-    test "Only decodes specified message types [18]", %{state: state} do
+    test "Only decodes specified message types [18]", %{state: _state} do
       {decoded, _groups, _latest} =
         ExAIS.Decoder.decode_messages(
           messages(),

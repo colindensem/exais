@@ -293,16 +293,24 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessage8
   # !AIVDM,1,1,,A,83HT5APj2P00000001BQJ@2E0000,0*72
   defp parse_message(msg_type, payload) when msg_type == 8 do
-    <<repeat_indicator::2, mmsi::30, spare::2, application_identifier::16, data::bitstring>> =
+    <<repeat_indicator::2, mmsi::30, spare::2, dac::10, fid::6, data::bitstring>> =
       payload
+
+    weather_map =
+      if dac == 1 and fid == 31 do
+        ExAis.Data.Decoders.WeatherReport.from_binary(data)
+        |> Map.from_struct()
+      else
+        %{}
+      end
 
     %{
       repeat_indicator: repeat_indicator,
       mmsi: mmsi,
       spare: spare,
-      application_identifier: application_identifier,
-      data: data
+      application_identifier: "#{dac}#{fid}"
     }
+    |> Map.merge(weather_map)
   end
 
   # AIS STANDARD SEARCH AND RESCUE AIRCRAFT POSITION REPORT (MESSAGE 9)
