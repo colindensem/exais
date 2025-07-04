@@ -70,14 +70,14 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 8
       assert attr.mmsi == "911122233"
-      assert attr.air_temp_c == -37.0
+      assert attr.air_temp_c == 23.0
       assert attr.current_direction_2 == nil
       assert attr.current_direction_3 == nil
       assert attr.current_measuring_level_2 == nil
       assert attr.current_measuring_level_3 == nil
       assert attr.current_speed_2 == nil
       assert attr.current_speed_3 == nil
-      assert attr.dew_point_c == -7.1
+      assert attr.dew_point_c == 12.9
       assert attr.gust_dir_deg == 306
       assert attr.horizontal_range == nil
       assert attr.horizontal_visibility_at_range == false
@@ -103,7 +103,7 @@ defmodule ExAIS.AisTest do
       assert attr.utc_minute == 54
       assert attr.water_level == 400.1
       assert attr.water_level_trend == nil
-      assert attr.water_temperature_c == 40.1
+      assert attr.water_temperature_c == 50.1
       assert attr.wave_direction == nil
       assert attr.wave_period == nil
       assert attr.wind_dir_deg == 285
