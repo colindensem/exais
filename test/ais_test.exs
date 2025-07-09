@@ -70,42 +70,42 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 8
       assert attr.mmsi == "911122233"
-      assert attr.air_temp_c == -37.0
-      assert attr.current_direction_2 == :na
-      assert attr.current_direction_3 == :na
-      assert attr.current_measuring_level_2 == :na
-      assert attr.current_measuring_level_3 == :na
-      assert attr.current_speed_2 == :na
-      assert attr.current_speed_3 == :na
-      assert attr.dew_point_c == -7.1
+      assert attr.air_temp_c == 23.0
+      assert attr.current_direction_2 == nil
+      assert attr.current_direction_3 == nil
+      assert attr.current_measuring_level_2 == nil
+      assert attr.current_measuring_level_3 == nil
+      assert attr.current_speed_2 == nil
+      assert attr.current_speed_3 == nil
+      assert attr.dew_point_c == 12.9
       assert attr.gust_dir_deg == 306
       assert attr.horizontal_range == nil
       assert attr.horizontal_visibility_at_range == false
-      assert attr.horizontal_visibility_nm == :na
+      assert attr.horizontal_visibility_nm == nil
       assert attr.humidity_percent == 52
-      assert attr.ice == :na
+      assert attr.ice == nil
       assert attr.lat_deg == 10.256001666666666
       assert attr.lon_deg == -0.49311333333333335
       assert attr.pos_accuracy == 1
-      assert attr.precipitation_type == :na
+      assert attr.precipitation_type == nil
       assert attr.pressure_hpa == 1007
-      assert attr.pressure_trend == :na
+      assert attr.pressure_trend == nil
       assert attr.salinity == 0.0
-      assert attr.sea_state == :na
-      assert attr.significant_wave_height == :na
-      assert attr.surface_current_direction == :na
-      assert attr.surface_current_speed == :na
-      assert attr.swell_direction == :na
-      assert attr.swell_height == :na
-      assert attr.swell_period == :na
+      assert attr.sea_state == nil
+      assert attr.significant_wave_height == nil
+      assert attr.surface_current_direction == nil
+      assert attr.surface_current_speed == nil
+      assert attr.swell_direction == nil
+      assert attr.swell_height == nil
+      assert attr.swell_period == nil
       assert attr.utc_day == 27
       assert attr.utc_hour == 7
       assert attr.utc_minute == 54
       assert attr.water_level == 400.1
-      assert attr.water_level_trend == :na
-      assert attr.water_temperature_c == 40.1
-      assert attr.wave_direction == :na
-      assert attr.wave_period == :na
+      assert attr.water_level_trend == nil
+      assert attr.water_temperature_c == 50.1
+      assert attr.wave_direction == nil
+      assert attr.wave_period == nil
       assert attr.wind_dir_deg == 285
       assert attr.wind_gust_knots == 3
       assert attr.wind_speed_knots == 2

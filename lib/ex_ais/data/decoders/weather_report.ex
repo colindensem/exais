@@ -98,9 +98,9 @@ defmodule ExAis.Data.Decoders.WeatherReport do
       wind_gust_knots: decode_simple(wind_gust, 127),
       wind_dir_deg: decode_angle(wind_dir),
       gust_dir_deg: decode_angle(gust_dir),
-      air_temp_c: decode_signed_scaled(air_temp, 2047, -60, 0.1),
+      air_temp_c: decode_scaled(air_temp, 2047, 0.1),
       humidity_percent: decode_simple(humidity, 101),
-      dew_point_c: decode_signed_scaled(dew_point, 1023, -20, 0.1),
+      dew_point_c: decode_scaled(dew_point, 1023, 0.1),
       pressure_hpa: decode_offset(pressure, 511, 800),
       pressure_trend: decode_list(:pressure, pressure_trend),
       water_level: decode_scaled(water_level, 511, 0.1),
@@ -120,7 +120,7 @@ defmodule ExAis.Data.Decoders.WeatherReport do
       swell_period: decode_simple(swell_period, 63),
       swell_direction: decode_angle(swell_direction),
       sea_state: decode_simple(sea_state, 13),
-      water_temperature_c: decode_signed_scaled(water_temperature_c, 1023, -10, 0.1),
+      water_temperature_c: decode_scaled(water_temperature_c, 1023, 0.1),
       precipitation_type: decode_list(:precipitation, precipitation_type),
       salinity: decode_scaled(salinity, 255, 0.1),
       ice: decode_yes_no(ice)
@@ -137,42 +137,38 @@ defmodule ExAis.Data.Decoders.WeatherReport do
   defp decode_angle(val) when is_integer(val) and val < 360,
     do: val
 
-  defp decode_angle(_val), do: :na
-
-  defp decode_simple(val, na), do: if(val == na, do: :na, else: val)
+  defp decode_angle(_val), do: nil
+  defp decode_simple(val, na), do: if(val == na, do: nil, else: val)
 
   defp decode_signed_scaled(val, na, offset, scale),
-    do: if(val == na, do: :na, else: val * scale + offset)
+    do: if(val == na, do: nil, else: val * scale + offset)
 
   defp decode_scaled(val, na, scale),
-    do: if(val == na, do: :na, else: val * scale)
+    do: if(val == na, do: nil, else: val * scale)
 
   defp decode_offset(val, na, offset),
-    do: if(val == na, do: :na, else: val + offset)
+    do: if(val == na, do: nil, else: val + offset)
 
   defp decode_list(:pressure, 0), do: :steady
   defp decode_list(:pressure, 1), do: :increasing
   defp decode_list(:pressure, 2), do: :decreasing
-  defp decode_list(:pressure, _), do: :na
-
+  defp decode_list(:pressure, _), do: nil
   defp decode_list(:water_level, 0), do: :steady
   defp decode_list(:water_level, 1), do: :increasing
   defp decode_list(:water_level, 2), do: :decreasing
-  defp decode_list(:water_level, _), do: :na
-
+  defp decode_list(:water_level, _), do: nil
   defp decode_list(:precipitation, 1), do: :rain
   defp decode_list(:precipitation, 2), do: :thunderstorm
   defp decode_list(:precipitation, 3), do: :freezing_rain
   defp decode_list(:precipitation, 4), do: :mixed_ice
   defp decode_list(:precipitation, 5), do: :snow
-  defp decode_list(:precipitation, _), do: :na
-
+  defp decode_list(:precipitation, _), do: nil
   defp decode_yes_no(0), do: :no
   defp decode_yes_no(1), do: :yes
-  defp decode_yes_no(_), do: :na
+  defp decode_yes_no(_), do: nil
 
   defp decode_horizontal_visibility(127),
-    do: %{horizontal_visibility_nm: :na, horizontal_visibility_at_range: false}
+    do: %{horizontal_visibility_nm: nil, horizontal_visibility_at_range: false}
 
   defp decode_horizontal_visibility(val) do
     %{
