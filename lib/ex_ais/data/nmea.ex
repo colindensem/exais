@@ -31,7 +31,7 @@ defmodule ExAIS.Data.NMEA do
 
   # Decode !AIVDM and !BSVDM messages
   defp decode(talker, formatter, values)
-       when (talker == "!AI" or talker == "!BS") and formatter == "VDM" do
+       when (talker == "!AI" or talker == "!BS") and formatter in ["VDM", "VDO"] do
     keys = [
       :talker,
       :formatter,
