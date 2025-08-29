@@ -140,9 +140,6 @@ defmodule ExAis.Data.Decoders.WeatherReport do
   defp decode_angle(_val), do: nil
   defp decode_simple(val, na), do: if(val == na, do: nil, else: val)
 
-  defp decode_signed_scaled(val, na, offset, scale),
-    do: if(val == na, do: nil, else: val * scale + offset)
-
   defp decode_scaled(val, na, scale),
     do: if(val == na, do: nil, else: val * scale)
 
