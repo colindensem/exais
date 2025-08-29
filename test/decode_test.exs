@@ -111,4 +111,38 @@ defmodule ExAIS.DecodeTest do
       assert sentence.latitude == 49.48284
     end
   end
+
+  describe "decode errors" do
+    test "" do
+      msgs = [
+        ",c:1756457771,t:LIVE*6A\\!AIVDM,1,1,,B,160rlr001\\s: ,c:1756457771,t:LIVE*6A\\!AIVDM,1,1,,B,1:fnGt?P00SQ@fNA7aOTlgvF253P,0*43",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,B,15@@sn30@03fi0H?9:T<20GT0@7c,0*6A",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,19@>idiP003tsAp>UvmUSwvH0d6=,0*01",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,18IWmT000?3V=i@?Cl5jUB<H287d,0*03",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,2,1,5,A,5777T482<iqiI9QGB205H63J222222\\s: ,c:1756457772,t:LIVE*69\\!AIVDM,2,2,5,A,88888888880,2*21",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,B,19?Q?B3000STj<d?H:5v452J2<FH,0*7F",
+        "\\p:poole,s:POOLE,c:1756457773,t:LIVE*11\\$AIHBT,5.0,A,8*28",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,15@><40000SQH>D@;Vw0`74J0`7m,0*2D",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,1611a:00013VPrr?sQ:@O5DD00Rl,0*6D",
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,35?vL@50003RvOD@<ei7c9fH0000,0*4F"
+      ]
+
+      {decoded, _groups, latest} =
+        ExAIS.Decoder.decode_messages(
+          msgs,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
+
+      assert Enum.count(decoded) == 7
+      assert latest == DateTime.from_unix!(1_756_457_772)
+    end
+  end
 end

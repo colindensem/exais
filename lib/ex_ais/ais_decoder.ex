@@ -165,13 +165,20 @@ defmodule ExAIS.Decoder do
   end
 
   def decode_message(msg, %{groups: groups, latest: latest}, msg_types) do
-    if Regex.match?(~r/\\.*\\!(AIVDM|AIVDO),[^*]+\\*[A-Fa-f0-9]{2}/, msg) do
+    if Regex.match?(~r/\\p.*\\!(AIVDM|AIVDO),[^*]+\*[A-Fa-f0-9]{2}/, msg) do
       # Complete message sentence
-      case check_sum(msg) do
+      [sentence | _] = Regex.run(~r/\\p.*\\!(AIVDM|AIVDO),[^*]+\*[A-Fa-f0-9]{2}/, msg)
+
+      case check_sum(sentence) do
         {:ok, []} ->
           {nil, %{groups: groups, latest: latest}}
 
         {:ok, parts} ->
+          parts =
+            if Regex.match?(~r/!(AIVDM|AIVDO)/, Enum.at(parts, 0, "")),
+              do: Enum.drop(parts, 1),
+              else: parts
+
           if Regex.match?(~r/,g:/, Enum.at(parts, 0)) do
             {decoded, groups} = process_group(parts, groups, msg_types)
 
