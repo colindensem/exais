@@ -26,6 +26,9 @@ defmodule ExAIS.Decoder do
   alias ExAIS.Data.Ais
   alias ExAIS.Data.NMEA
 
+  @regex ~r/^\\[psgctq]:[^\\,*]+(?:,[psgctq]:[^\\,*]+)*\*[A-Fa-f0-9]{2}\\!(AIVDM|AIVDO),[^
+  *]+\*[A-Fa-f0-9]{2}$/
+
   @initial_state %{
     # Used to handle fragmented messages
     fragment: "",
@@ -165,9 +168,10 @@ defmodule ExAIS.Decoder do
   end
 
   def decode_message(msg, %{groups: groups, latest: latest}, msg_types) do
-    if Regex.match?(~r/\\p.*\\!(AIVDM|AIVDO),[^*]+\*[A-Fa-f0-9]{2}/, msg) do
+
+    if Regex.match?(@regex, msg) do
       # Complete message sentence
-      [sentence | _] = Regex.run(~r/\\p.*\\!(AIVDM|AIVDO),[^*]+\*[A-Fa-f0-9]{2}/, msg)
+      [sentence | _] = Regex.run(@regex, msg)
 
       case check_sum(sentence) do
         {:ok, []} ->
@@ -360,11 +364,18 @@ defmodule ExAIS.Decoder do
   defp decode_tag(["g", val]), do: %{g: val}
   defp decode_tag(["s", val]), do: %{s: val}
 
-  defp decode_tag(["c", val]),
+  defp decode_tag(["c", val]) when byte_size(val) == 10,
     do: %{c: val, timestamp: DateTime.from_unix!(String.to_integer(val))}
+
+  defp decode_tag(["c", val]) when byte_size(val) == 16,
+    do: %{c: val, timestamp: DateTime.from_unix!(String.to_integer(val), :microsecond)}
+
+  defp decode_tag(["c", val]),
+    do: %{c: val, timestamp: DateTime.now!("Etc/UTC")}
 
   defp decode_tag(["q", val]), do: %{q: val}
   defp decode_tag(["t", val]), do: %{t: val}
+  defp decode_tag(_), do: %{}
 
   def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)
@@ -422,7 +433,6 @@ defmodule ExAIS.Decoder do
       sum == chk
     rescue
       _e ->
-        Logger.warning("checksum error: #{inspect(fields)}")
         false
     end
   end

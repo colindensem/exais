@@ -124,7 +124,8 @@ defmodule ExAIS.DecodeTest do
         "\\p:poole,s:POOLE,c:1756457773,t:LIVE*11\\$AIHBT,5.0,A,8*28",
         "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,15@><40000SQH>D@;Vw0`74J0`7m,0*2D",
         "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,1611a:00013VPrr?sQ:@O5DD00Rl,0*6D",
-        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,35?vL@50003RvOD@<ei7c9fH0000,0*4F"
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,35?vL@50003RvOD@<ei7c9fH0000,0*4F",
+        "\\p:poole,s: ,c:1756467745,t:LIVEDM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0DM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0*6E\\!AIVDM,1,1,,A,B6bBpc*0F"
       ]
 
       {decoded, _groups, latest} =
@@ -143,6 +144,30 @@ defmodule ExAIS.DecodeTest do
 
       assert Enum.count(decoded) == 7
       assert latest == DateTime.from_unix!(1_756_457_772)
+    end
+
+    test "corrupt" do
+      msgs = [
+        "\\p:poole,s: ,c:1756467549,t:LIVE*60\!AIVDM,1,1,,B,4>kvmhAuH\\s: ,c:1756467548,t:LIVE*61\\!AIVDM,1,1,,B,4>kvmhAuHFcW8SNUBp@8v>g00@5o,0*36",
+        "\\p:poole,s: ,c:1756467745,t:LIVEDM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0DM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0*6E\\!AIVDM,1,1,,A,B6bBpc*0F"
+      ]
+
+      {decoded, _groups, latest} =
+        ExAIS.Decoder.decode_messages(
+          msgs,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
+
+      assert Enum.count(decoded) == 0
+      assert latest == DateTime.from_unix!(0)
     end
   end
 end
