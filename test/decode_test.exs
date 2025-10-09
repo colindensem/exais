@@ -124,7 +124,8 @@ defmodule ExAIS.DecodeTest do
         "\\p:poole,s:POOLE,c:1756457773,t:LIVE*11\\$AIHBT,5.0,A,8*28",
         "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,15@><40000SQH>D@;Vw0`74J0`7m,0*2D",
         "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,1611a:00013VPrr?sQ:@O5DD00Rl,0*6D",
-        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,35?vL@50003RvOD@<ei7c9fH0000,0*4F"
+        "\\p:poole,s: ,c:1756457772,t:LIVE*69\\!AIVDM,1,1,,A,35?vL@50003RvOD@<ei7c9fH0000,0*4F",
+        "\\p:poole,s: ,c:1756467745,t:LIVEDM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0DM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0*6E\\!AIVDM,1,1,,A,B6bBpc*0F"
       ]
 
       {decoded, _groups, latest} =
@@ -143,6 +144,68 @@ defmodule ExAIS.DecodeTest do
 
       assert Enum.count(decoded) == 7
       assert latest == DateTime.from_unix!(1_756_457_772)
+    end
+
+    test "corrupt" do
+      msgs = [
+        "\\p:poole,s: ,c:1756467549,t:LIVE*60\!AIVDM,1,1,,B,4>kvmhAuH\\s: ,c:1756467548,t:LIVE*61\\!AIVDM,1,1,,B,4>kvmhAuHFcW8SNUBp@8v>g00@5o,0*36",
+        "\\p:poole,s: ,c:1756467745,t:LIVEDM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0DM,1,1,,B,16best3P0ISO?ob@q=ptI?vj2H?>,0*6E\\!AIVDM,1,1,,A,B6bBpc*0F"
+      ]
+
+      {decoded, _groups, latest} =
+        ExAIS.Decoder.decode_messages(
+          msgs,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
+
+      assert Enum.count(decoded) == 0
+      assert latest == DateTime.from_unix!(0)
+    end
+  end
+
+  describe "Safety related messages" do
+    test "decodes single senteneces and groups" do
+
+      msgs = [
+        "\\p:Test,s:Source,c:1603859289,t:LIVE*75\\!AIVDM,1,1,,B,>8:aw>0l5T@5V0l5T@5V400,2*07",
+        "\\p:Test,s:Source,c:1603773346,t:LIVE*70\\!AIVDM,1,1,,B,>8;Ddl0l5T@5V0l5T@5V400,2*62",
+        "\\p:Test,s:Source,c:1602820148,t:LIVE*74\\!AIVDM,1,1,,A,>8:akP0l5T@5V0l5T@5V400,2*76",
+        "\\p:Group,g:1-2-0782,s:Source,c:1603499477*47\\!AIVDM,2,1,9,,>@2q0BP5@tr0@U<=8E04p=V2n10tTqB1Lu8tq`tJ18Hj2Phhq:3;KC?F,0*29",
+        "\\p:Group,s:exactearth,g:2-2-0782*50\\!AIVDM,2,2,9,,V0EQ@TpMDU<PD@0,2*4E"
+
+      ]
+
+      {decoded, groups, latest} =
+        ExAIS.Decoder.decode_messages(
+          msgs,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
+
+      assert %{"Group" => %{}} == groups
+      assert ~U[2020-10-28 04:28:09Z] == latest
+      assert ["548044600", "548744400", "548041600", "3031114"] == decoded |> Enum.map(fn x -> x.mmsi end)
+      assert [
+        "MAYDAY MAYDAY!",
+        "MAYDAY MAYDAY!",
+        "MAYDAY MAYDAY!",
+        "ATON DISCREPANCY - POINT WORONZOF RFL (LLNR 26435) EXTINGUISHED"
+      ] == decoded |> Enum.map(fn x -> x.text end)
     end
   end
 end

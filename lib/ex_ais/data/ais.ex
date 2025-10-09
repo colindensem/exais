@@ -3,6 +3,7 @@ defmodule ExAIS.Data.Ais do
   Handle decoding of the AIS Payload to a convenient `Map`.
   """
 
+  require Logger
   alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
@@ -80,7 +81,7 @@ defmodule ExAIS.Data.Ais do
          )}
       rescue
         e in MatchError ->
-          IO.puts(
+          Logger.debug(
             "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect(byte_size(orig_payload))}: " <>
               Exception.message(e) <> Exception.format_stacktrace(nil)
           )
@@ -394,7 +395,7 @@ defmodule ExAIS.Data.Ais do
       repeat_indicator: repeat_indicator,
       mmsi: mmsi,
       spare: spare,
-      safety_related_text: SixBit.get_string(safety_text, safety_text_size)
+      text: SixBit.get_string(safety_text, safety_text_size)
     }
   end
 
