@@ -170,4 +170,42 @@ defmodule ExAIS.DecodeTest do
       assert latest == DateTime.from_unix!(0)
     end
   end
+
+  describe "Safety related messages" do
+    test "decodes single senteneces and groups" do
+
+      msgs = [
+        "\\p:Test,s:Source,c:1603859289,t:LIVE*75\\!AIVDM,1,1,,B,>8:aw>0l5T@5V0l5T@5V400,2*07",
+        "\\p:Test,s:Source,c:1603773346,t:LIVE*70\\!AIVDM,1,1,,B,>8;Ddl0l5T@5V0l5T@5V400,2*62",
+        "\\p:Test,s:Source,c:1602820148,t:LIVE*74\\!AIVDM,1,1,,A,>8:akP0l5T@5V0l5T@5V400,2*76",
+        "\\p:Group,g:1-2-0782,s:Source,c:1603499477*47\\!AIVDM,2,1,9,,>@2q0BP5@tr0@U<=8E04p=V2n10tTqB1Lu8tq`tJ18Hj2Phhq:3;KC?F,0*29",
+        "\\p:Group,s:exactearth,g:2-2-0782*50\\!AIVDM,2,2,9,,V0EQ@TpMDU<PD@0,2*4E"
+
+      ]
+
+      {decoded, groups, latest} =
+        ExAIS.Decoder.decode_messages(
+          msgs,
+          %{
+            # Used to handle fragmented messages
+            fragment: "",
+            decoded: [],
+            # Map of list of grouped messages keyed by group id
+            groups: %{},
+            latest: DateTime.from_unix!(0)
+          },
+          Ais.all_msg_types()
+        )
+
+      assert %{"Group" => %{}} == groups
+      assert ~U[2020-10-28 04:28:09Z] == latest
+      assert ["548044600", "548744400", "548041600", "3031114"] == decoded |> Enum.map(fn x -> x.mmsi end)
+      assert [
+        "MAYDAY MAYDAY!",
+        "MAYDAY MAYDAY!",
+        "MAYDAY MAYDAY!",
+        "ATON DISCREPANCY - POINT WORONZOF RFL (LLNR 26435) EXTINGUISHED"
+      ] == decoded |> Enum.map(fn x -> x.text end)
+    end
+  end
 end

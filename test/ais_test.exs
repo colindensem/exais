@@ -142,7 +142,7 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 14
       assert attr.mmsi == "351809000"
-      assert attr.safety_related_text == "RCVD YR TEST MSG"
+      assert attr.text == "RCVD YR TEST MSG"
     end
 
     test "decode class 16 - 144 bit" do

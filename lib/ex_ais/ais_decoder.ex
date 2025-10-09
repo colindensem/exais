@@ -126,7 +126,6 @@ defmodule ExAIS.Decoder do
   end
 
   def handle_info(:stats, state) do
-    # IO.puts("Decode count: #{inspect state[:count]}")
     :telemetry.execute([:portal, :decoder, :decoded], %{count: state[:count] / 10}, %{})
 
     :telemetry.execute(
@@ -141,7 +140,6 @@ defmodule ExAIS.Decoder do
       %{}
     )
 
-    # IO.puts("lag: #{inspect DateTime.now!("Etc/UTC")} #{inspect state[:latest]} #{inspect DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])}")
     schedule_work(:stats, 10)
     {:noreply, %{state | count: 0}}
   end
@@ -168,7 +166,6 @@ defmodule ExAIS.Decoder do
   end
 
   def decode_message(msg, %{groups: groups, latest: latest}, msg_types) do
-
     if Regex.match?(@regex, msg) do
       # Complete message sentence
       [sentence | _] = Regex.run(@regex, msg)
@@ -236,7 +233,6 @@ defmodule ExAIS.Decoder do
              Map.put(provider_groups, id, %{tag: tags, msg: msg, time: DateTime.now!("Etc/UTC")})
            )}
         else
-          # IO.puts("group invalid msg: #{inspect parts}")
           {nil, groups}
         end
 
@@ -261,15 +257,15 @@ defmodule ExAIS.Decoder do
                   {nil, new_groups}
               end
             else
-              # IO.puts("group invalid msg: #{inspect parts}")
+
               {nil, groups}
             end
           else
-            # IO.puts("group checksum fail: #{inspect parts}")
+
             {nil, groups}
           end
         else
-          # IO.puts("group no group: #{inspect parts}")
+
           {nil, groups}
         end
 
@@ -283,15 +279,12 @@ defmodule ExAIS.Decoder do
               new_msg = merge_fragment(group[:msg], msg_frag)
               {nil, %{groups | tags[:p] => %{provider_groups | id => %{group | msg: new_msg}}}}
             else
-              # IO.puts("group invalid msg: #{inspect parts}")
               {nil, groups}
             end
           else
-            # IO.puts("group checksum fail: #{inspect parts}")
             {nil, groups}
           end
         else
-          # IO.puts("group no group: #{inspect parts}")
           {nil, groups}
         end
     end
@@ -335,7 +328,6 @@ defmodule ExAIS.Decoder do
 
   defp decode_parts(parts, msg_types) do
     tags = decode_tags(Enum.at(parts, 0))
-
     case decode_nmea(Enum.at(parts, 1), msg_types) do
       {:ok, message} -> Map.merge(tags, message)
       _ -> nil
@@ -379,7 +371,6 @@ defmodule ExAIS.Decoder do
 
   def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)
-
     try do
       cond do
         state == :error ->
