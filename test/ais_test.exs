@@ -142,7 +142,7 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 14
       assert attr.mmsi == "351809000"
-      assert attr.safety_related_text == "RCVD YR TEST MSG"
+      assert attr.text == "RCVD YR TEST MSG"
     end
 
     test "decode class 16 - 144 bit" do
@@ -206,6 +206,18 @@ defmodule ExAIS.AisTest do
       assert attr.latitude == 49.536165
       assert attr.longitude == 0.0315
       assert attr.assembled_name == "EPAVE ANTARES"
+    end
+
+    test "decode class 21 VDO" do
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse("!AIVDO,1,1,,A,ENjHOBn67cRa@9T7Wb9P0000000?qlGd>h:hP1088;hP00,4*1A")
+
+      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      assert attr.msg_type == 21
+      assert attr.mmsi == "992354123"
+      assert attr.latitude == 51.564166666666665
+      assert attr.longitude == -2.700833333333333
+      assert attr.assembled_name == "LOWER SHOOTS"
     end
 
     test "decode class 22" do
