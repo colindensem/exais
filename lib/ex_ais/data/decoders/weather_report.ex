@@ -136,7 +136,7 @@ defmodule ExAis.Data.Decoders.WeatherReport do
 
   defp decode_coord(val), do: val / 60_000.0
 
-  defp decode_div10(na, na), do: nil
+  defp decode_div10(val, na) when val == na, do: nil
   defp decode_div10(val, _na), do: val / 10.0
 
   defp decode_horizontal_visibility(127),
@@ -164,13 +164,13 @@ defmodule ExAis.Data.Decoders.WeatherReport do
   defp decode_list(:precipitation, 5), do: :snow
   defp decode_list(:precipitation, _), do: nil
 
-  defp decode_offset(na, na, _offset), do: nil
+  defp decode_offset(val, na, _offset) when val == na, do: nil
   defp decode_offset(val, _na, offset), do: val + offset
 
-  defp decode_scaled(na, na, _scale), do: nil
+  defp decode_scaled(val, na, _scale) when val == na, do: nil
   defp decode_scaled(val, _na, scale), do: val * scale
 
-  defp decode_simple(na, na), do: nil
+  defp decode_simple(val, na) when val == na, do: nil
   defp decode_simple(val, _na), do: val
 
   defp decode_yes_no(0), do: :no
