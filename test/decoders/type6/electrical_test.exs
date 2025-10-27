@@ -2,7 +2,7 @@ defmodule Decoders.Type6.ElectricalTest do
   @moduledoc false
   use ExUnit.Case
 
-  alias ExAis.Data.Decoders.Type6.Electrical
+  alias ExAIS.Data.Decoders.Type6.Electrical
   import Bitwise
 
   describe "decode_status/1" do

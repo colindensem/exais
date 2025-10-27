@@ -202,7 +202,7 @@ defmodule ExAIS.Data.Ais do
 
     gla_map =
       if fid == 10 do
-        ExAis.Data.Decoders.Type6.Electrical.from_binary(data)
+        ExAIS.Data.Decoders.Type6.Electrical.from_binary(data)
         |> Map.from_struct()
       else
         %{}
@@ -308,7 +308,7 @@ defmodule ExAIS.Data.Ais do
 
     weather_map =
       if fid == 31 do
-        ExAis.Data.Decoders.WeatherReport.from_binary(data)
+        ExAIS.Data.Decoders.WeatherReport.from_binary(data)
         |> Map.from_struct()
       else
         %{}

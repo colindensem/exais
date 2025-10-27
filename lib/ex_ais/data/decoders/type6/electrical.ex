@@ -1,4 +1,4 @@
-defmodule ExAis.Data.Decoders.Type6.Electrical do
+defmodule ExAIS.Data.Decoders.Type6.Electrical do
   @moduledoc """
   Decode a GLA Type 6 (FI 6) Electrical / System Status payload.
 
