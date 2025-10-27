@@ -257,15 +257,12 @@ defmodule ExAIS.Decoder do
                   {nil, new_groups}
               end
             else
-
               {nil, groups}
             end
           else
-
             {nil, groups}
           end
         else
-
           {nil, groups}
         end
 
@@ -328,6 +325,7 @@ defmodule ExAIS.Decoder do
 
   defp decode_parts(parts, msg_types) do
     tags = decode_tags(Enum.at(parts, 0))
+
     case decode_nmea(Enum.at(parts, 1), msg_types) do
       {:ok, message} -> Map.merge(tags, message)
       _ -> nil
@@ -371,6 +369,7 @@ defmodule ExAIS.Decoder do
 
   def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)
+
     try do
       cond do
         state == :error ->
