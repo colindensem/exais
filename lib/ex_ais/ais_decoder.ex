@@ -46,7 +46,7 @@ defmodule ExAIS.Decoder do
 
   def init(state) do
     Logger.info("Ais Decoder init #{inspect(state)}")
-    schedule_work(:stats, 10)
+
     {:ok, state}
   end
 
@@ -60,19 +60,7 @@ defmodule ExAIS.Decoder do
     Task.Supervisor.async_nolink(
       task_supervisor,
       fn ->
-        start = System.monotonic_time()
         {new_decoded, groups, latest} = decode_messages(msgs, state, msg_types)
-
-        if Mix.env() != :test do
-          :telemetry.execute(
-            [:portal, :decoder, :decode_time],
-            %{
-              duration:
-                System.convert_time_unit(System.monotonic_time() - start, :native, :millisecond)
-            },
-            %{}
-          )
-        end
 
         {:decoded, new_decoded, groups, latest}
       end
@@ -87,17 +75,7 @@ defmodule ExAIS.Decoder do
     Task.Supervisor.async_nolink(
       task_supervisor,
       fn ->
-        start = System.monotonic_time()
         {new_decoded, groups, latest} = decode_messages(msgs, state, msg_types)
-
-        :telemetry.execute(
-          [:portal, :decoder, :decode_time],
-          %{
-            duration:
-              System.convert_time_unit(System.monotonic_time() - start, :native, :millisecond)
-          },
-          %{}
-        )
 
         {:decoded, new_decoded, groups, latest}
       end
@@ -123,25 +101,6 @@ defmodule ExAIS.Decoder do
       end
 
     {:noreply, %{state | groups: prune_groups(groups), latest: latest}}
-  end
-
-  def handle_info(:stats, state) do
-    :telemetry.execute([:portal, :decoder, :decoded], %{count: state[:count] / 10}, %{})
-
-    :telemetry.execute(
-      [:portal, :decoder, :message_queue_len],
-      %{message_queue_len: Process.info(self(), :message_queue_len)},
-      %{}
-    )
-
-    :telemetry.execute(
-      [:portal, :decoder, :decode_lag],
-      %{time: DateTime.diff(DateTime.now!("Etc/UTC"), state[:latest])},
-      %{}
-    )
-
-    schedule_work(:stats, 10)
-    {:noreply, %{state | count: 0}}
   end
 
   def handle_info({:DOWN, _ref, :process, _pid, :normal}, state) do
@@ -324,11 +283,6 @@ defmodule ExAIS.Decoder do
       {provider, new_grps}
     end)
     |> Enum.into(%{})
-  end
-
-  defp schedule_work(task, time) do
-    # time in seconds
-    Process.send_after(self(), task, time * 1000)
   end
 
   defp merge_fragment(msg, frag) do

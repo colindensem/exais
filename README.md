@@ -14,12 +14,12 @@ ExAIS is an Elixir library for decoding AIS (Automatic Identification System) da
 
 ## Installation
 
-Add `ex_ais` to your list of dependencies in `mix.exs`:
+Add `exais` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:ex_ais, "~> 0.2.0"}
+    {:exais, "~> 0.2.1"}
   ]
 end
 ```

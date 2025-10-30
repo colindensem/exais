@@ -2,7 +2,7 @@ defmodule ExAIS.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/admarrs/ex_pmtiles"
-  @version "0.2.0"
+  @version "0.2.1"
 
   def project do
     [
@@ -38,9 +38,6 @@ defmodule ExAIS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
-      {:telemetry, "~> 1.0"},
-
       # dev & test deps
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
