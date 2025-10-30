@@ -1,14 +1,30 @@
 defmodule ExAIS.MixProject do
   use Mix.Project
 
+  @source_url "https://github.com/admarrs/ex_pmtiles"
+  @version "0.2.1"
+
   def project do
     [
       app: :exais,
-      version: "0.1.15",
-      elixir: "~> 1.15",
+      version: @version,
+      elixir: "~> 1.17",
+      name: "ExAis",
+      source_url: @source_url,
       elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
+      package: package(),
+      deps: deps(),
+      docs: docs(),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.cobertura": :test
+      ]
     ]
   end
 
@@ -22,8 +38,48 @@ defmodule ExAIS.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:geo_utils, git: "https://github.com/admarrs/geo_utils.git"},
-      {:telemetry, "~> 1.0"}
+      # dev & test deps
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
+
+      # test deps
+      {:excoveralls, "~> 0.18", only: :test}
+    ]
+  end
+
+  defp aliases do
+    [
+      precommit: ["compile --warning-as-errors", "deps.unlock --unused", "format", "test"]
+    ]
+  end
+
+  defp package do
+    [
+      description: description(),
+      files: ["lib", "mix.exs", "README*", "LICENSE", "CHANGELOG.md"],
+      exclude_patterns: ["_build", "deps", "test", "*~"],
+      maintainers: ["Alan Marrs"],
+      licenses: ["MIT"],
+      links: %{
+        Changelog: "#{@source_url}/blob/master/CHANGELOG.md",
+        GitHub: @source_url
+      },
+      exclude_patterns: [~r/.*~/]
+    ]
+  end
+
+  defp description do
+    """
+    Elixir library for decoding AIS data.
+    """
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extras: ["README.md"]
     ]
   end
 

@@ -46,8 +46,7 @@ defmodule ExAIS.Data.SixBit do
     chunks(<<value::size(length)>>, 6)
     |> Enum.filter(fn x -> bit_size(x) == 6 end)
     |> Enum.map(&bitstring_to_binary/1)
-    |> Enum.map(&get_character/1)
-    |> Enum.join()
+    |> Enum.map_join(&get_character/1)
     |> String.replace("@", "")
   end
 

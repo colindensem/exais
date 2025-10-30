@@ -1,69 +1,120 @@
-# AIS
+# ExAIS
 
-AIS Library in Elixir. This library can decode the common NMEA 0183 v4.0 format sentences relating to AIS. It also handles
-the tag block prefix common to satellite AIS providers such as Spire:
-```
-\c:1503079500*55\!AIVDM,1,1,,B,C6:b0Kh09b3t1K4ChsS2FK008NL>`2CT@2N000000000S4h8S400,0*50
-```
-and message groups. 
+ExAIS is an Elixir library for decoding AIS (Automatic Identification System) data transmitted by vessels via NMEA 0183 v4.0 format sentences.
 
-It also provides a number of components for building and maintaining an in memory state based upon the processed AIS data:
+## Features
 
-```elixir
-%AIS.Data.AisState{
-  vessels: %{},                   # A list of current vessels
-  position_updates: [],           # The latest position updates
-  trips: %{},                     # A list of current trips
-  trip_updates: [],               # The latest trip updates
-  index: QuadKeyTree.create(),    # A quad-tree geospatial index of vessel potions
-  latest: %{}                     # The timestamps of the latest updates for each data provider
-}
-```
+- Decode standard NMEA 0183 v4.0 AIS sentences (AIVDM/AIVDO)
+- Support for AIS tag blocks commonly used by satellite AIS providers (e.g., Spire)
+- Handle multi-part message groups and fragmented messages
+- GenServer-based decoder for concurrent message processing
+- Telemetry integration for monitoring decoder performance
+- Built-in checksum validation
+- Support for filtering specific AIS message types
 
-The `AIS.Processor` GenServer is the process for creating and maintaining this state.
+## Installation
 
-It provides a number of callbacks for creating and querying state:
-
-* `handle_call({:decoded, decoded}, _from, state)`: update state given a list of decoded messages
-* `handle_call({:get_tile, x, y, z}, _from, state)`: get all vessels for a given web mercator map tile
-* `handle_call({:get_entity, id}, _from, state)`: get the details for a given entity id
-
-Decoded messages presented to `handle_call({:decoded, decoded}, _, _)` take the form:
+Add `exais` to your list of dependencies in `mix.exs`:
 
 ```elixir
-%{
-  :mmsi => 636016337,
-  :timestamp => ~U[2024-02-15 14:30:46Z],
-  :ship_type => 70,
-  :formatter => "VDM",
-  "q" => "",
-  "g" => "1-2-20395571",
-  "c" => "1708007446",
-  :padding => "0",
-  :dimension_to_stern => 29,
-  :destination => "PABLB",
-  :repeat_indicator => 1,
-  :position_fix_type => 1,
-  :eta => %{month: 2, day: 14, minute: 0, hour: 20},
-  :channel => "A",
-  :sequential => "1",
-  :name => "EVANGELIA D",
-  "p" => "spire",
-  :dte => 0,
-  :dimension_to_starboard => 13,
-  :current => "1",
-  :msg_type => 5,
-  :checksum => "16",
-  "s" => "",
-  :dimension_to_port => 19,
-  :spare => 0,
-  :imo_number => 9689184,
-  :call_sign => "D5FQ3",
-  :payload => "5INSFlH2Cn60CDI7>20EH4pLDhT60B2222222216EHMC=4WD0ND0@S0`888888888888880",
-  :draught => 12.1,
-  :ais_version_indicator => 2,
-  :talker => "!AI",
-  :dimension_to_bow => 171,
-  :total => "1"
-}
+def deps do
+  [
+    {:exais, "~> 0.2.1"}
+  ]
+end
 ```
+
+## Usage
+
+### Basic Decoding
+
+Decode a single AIS message:
+
+```elixir
+# Simple NMEA sentence
+ExAIS.Decoder.decode_nmea("!AIVDM,1,1,,B,15M67FC000G?ufbE`FepT@3n00Sa,0*5C", [1, 2, 3])
+
+# With satellite AIS tag block
+message = "\\c:1503079500*55\\!AIVDM,1,1,,B,C6:b0Kh09b3t1K4ChsS2FK008NL>`2CT@2N000000000S4h8S400,0*50"
+ExAIS.Decoder.decode_message(message, %{groups: %{}, latest: DateTime.utc_now()}, ExAIS.Data.Ais.all_msg_types())
+```
+
+### Using the Decoder GenServer
+
+The library provides a GenServer-based decoder for processing streams of AIS messages:
+
+```elixir
+# Start a decoder
+decoder_opts = %{
+  id: :my_decoder,
+  module: ExAIS.Decoder,
+  name: :my_decoder,
+  batch_size: 10_000,
+  processor: :my_processor,
+  supervisor: MyApp.TaskSupervisor,
+  msg_types: [1, 2, 3]  # Optional: filter specific message types
+}
+
+{:ok, pid} = ExAIS.Decoder.start_link(decoder_opts)
+
+# Send messages for decoding
+GenServer.cast(:my_decoder, {:decode, list_of_messages})
+```
+
+### Tag Block Support
+
+ExAIS handles tag blocks commonly used in satellite AIS feeds:
+
+```elixir
+# Tag block format: \tag1:value1,tag2:value2*checksum\!AIVDM,...
+# Supported tags:
+# - c: Unix timestamp (seconds or microseconds)
+# - s: Source (e.g., "terrestrial", "satellite")
+# - p: Provider identifier
+# - g: Group message identifier (format: "n-total-id")
+# - q: Quality indicator
+# - t: Text string
+```
+
+### Message Groups
+
+ExAIS automatically handles grouped messages that span multiple sentences:
+
+```elixir
+# Multi-part messages are reassembled automatically
+# Group tag format: g:1-2-12345 (message 1 of 2, group ID 12345)
+```
+
+## Supported AIS Message Types
+
+The library supports decoding of various AIS message types. By default, all message types are processed, but you can filter to specific types when initializing a decoder.
+
+## Development
+
+```bash
+# Install dependencies
+mix deps.get
+
+# Run tests
+mix test
+
+# Run tests with coverage
+mix coveralls
+
+# Format code
+mix format
+
+# Run static analysis
+mix credo
+
+# Generate documentation
+mix docs
+```
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. 

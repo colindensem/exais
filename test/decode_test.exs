@@ -166,7 +166,7 @@ defmodule ExAIS.DecodeTest do
           Ais.all_msg_types()
         )
 
-      assert Enum.count(decoded) == 0
+      assert Enum.empty?(decoded)
       assert latest == DateTime.from_unix!(0)
     end
   end

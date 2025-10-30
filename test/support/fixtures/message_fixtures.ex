@@ -1,4 +1,6 @@
 defmodule ExAIS.MessageFixtures do
+  @moduledoc false
+
   @messages [
     "\\p:spire,s:terrestrial,c:1692781258*54\\!AIVDM,1,1,,B,B3MA@I007?sDoVW;bE=23wpUoP06,0*4B",
     "\\p:spire,s:terrestrial,c:1692781259*55\\!AIVDM,1,1,,A,33aKV05P00PG@O@N7gI@0?wT2>`<,0*3C",
@@ -36,7 +38,7 @@ defmodule ExAIS.MessageFixtures do
     "\\p:orbcomm,g:3-3-8368053*6E\\!AIVDM,3,3,3,A,H54M`Owwqpwwj`9M@P0,2*63"
   ]
 
-  def messages() do
+  def messages do
     @messages
   end
 end
