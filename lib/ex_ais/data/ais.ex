@@ -5,7 +5,7 @@ defmodule ExAIS.Data.Ais do
 
   require Logger
 
-  alias ExAis.Data.Decoders.WeatherReport
+  alias ExAIS.Data.Decoders.WeatherReport
   alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
@@ -310,7 +310,7 @@ defmodule ExAIS.Data.Ais do
 
     weather_map =
       if fid == 31 do
-        ExAis.Data.Decoders.WeatherReport.from_binary(data)
+        WeatherReport.from_binary(data)
         |> Map.from_struct()
       else
         %{}
