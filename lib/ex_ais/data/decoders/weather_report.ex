@@ -1,4 +1,4 @@
-defmodule ExAis.Data.Decoders.WeatherReport do
+defmodule ExAIS.Data.Decoders.WeatherReport do
   @moduledoc """
   Parses DAC 1, FI 31 (weather) AIS payload into raw numeric field values.
   """

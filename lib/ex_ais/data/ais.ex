@@ -5,7 +5,7 @@ defmodule ExAIS.Data.Ais do
 
   require Logger
 
-  alias ExAis.Data.Decoders.WeatherReport
+  alias ExAIS.Data.Decoders.WeatherReport
   alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
