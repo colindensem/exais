@@ -310,7 +310,7 @@ defmodule ExAIS.Data.Ais do
 
     weather_map =
       if fid == 31 do
-        WeatherReport.from_binary(data)
+        ExAis.Data.Decoders.WeatherReport.from_binary(data)
         |> Map.from_struct()
       else
         %{}
