@@ -4,6 +4,8 @@ defmodule ExAIS.Data.Ais do
   """
 
   require Logger
+
+  alias ExAis.Data.Decoders.WeatherReport
   alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
@@ -299,7 +301,7 @@ defmodule ExAIS.Data.Ais do
 
     weather_map =
       if fid == 31 do
-        ExAis.Data.Decoders.WeatherReport.from_binary(data)
+        WeatherReport.from_binary(data)
         |> Map.from_struct()
       else
         %{}
@@ -403,8 +405,8 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/pdf/AIS/ITU_R_M_1371_5_3_13_Message_15.pdf
   #
   # Also has spurious datas at the end
-  # The first station is interrogated two (2) messages, and the second station is interrogated one(1) message: All parameters should be defined
-  # same as
+  # The first station is interrogated two (2) messages, and the second station is interrogated one(1)
+  # message: All parameters should be defined same as
   # The  first  station  and  the  second  station  are  interrogated  one  (1)  message  each:
   # The  parameters  destination  ID1,  message  ID1.1,  slot  offset  1.1,  destination  ID2,
   # message ID2.1, and slot offset 2.1 should be defined.
@@ -434,8 +436,9 @@ defmodule ExAIS.Data.Ais do
     }
   end
 
-  # One  (1)  station  is  interrogated  two  (2)  messages:  The  parameters  destination  ID1,  message  ID1.1,  slot  offset  1.1,  message  ID1.2,
-  # and  slot  offset  1.2  should  be  defined. The parameters destination ID2, message ID2.1, and slot offset 2.1 should be omitted.
+  # One  (1)  station  is  interrogated  two  (2)  messages:  The  parameters  destination  ID1,
+  # message  ID1.1,  slot  offset  1.1,  message  ID1.2, and  slot  offset  1.2  should  be
+  # defined. The parameters destination ID2, message ID2.1, and slot offset 2.1 should be omitted.
   defp parse_message(
          msg_type,
          <<repeat_indicator::2, mmsi::30, spare1::2, destination_id_1::30, msg_type_1::6,
@@ -455,8 +458,8 @@ defmodule ExAIS.Data.Ais do
     }
   end
 
-  # One (1) station is interrogated one (1) message: The parameters destination ID1, message ID1.1 and slot offset 1.1
-  # should be defined. All other parameters should be omitted.
+  # One (1) station is interrogated one (1) message: The parameters destination ID1, message ID1.1
+  # and slot offset 1.1 ßshould be defined. All other parameters should be omitted.
   defp parse_message(
          msg_type,
          <<repeat_indicator::2, mmsi::30, spare1::2, destination_id_1::30, msg_type_1::6,

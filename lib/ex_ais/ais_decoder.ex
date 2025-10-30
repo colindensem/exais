@@ -166,36 +166,50 @@ defmodule ExAIS.Decoder do
   end
 
   def decode_message(msg, %{groups: groups, latest: latest}, msg_types) do
-    if Regex.match?(@regex, msg) do
-      # Complete message sentence
-      [sentence | _] = Regex.run(@regex, msg)
-
-      case check_sum(sentence) do
-        {:ok, []} ->
-          {nil, %{groups: groups, latest: latest}}
-
-        {:ok, parts} ->
-          parts =
-            if Regex.match?(~r/!(AIVDM|AIVDO)/, Enum.at(parts, 0, "")),
-              do: Enum.drop(parts, 1),
-              else: parts
-
-          if Regex.match?(~r/,g:/, Enum.at(parts, 0)) do
-            {decoded, groups} = process_group(parts, groups, msg_types)
-
-            if decoded do
-              {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
-            else
-              {decoded, %{groups: groups, latest: latest}}
-            end
-          else
-            decoded = decode_parts(parts, msg_types)
-            {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
-          end
-      end
+    with true <- Regex.match?(@regex, msg),
+         [sentence | _] <- Regex.run(@regex, msg),
+         {:ok, parts} when parts != [] <- check_sum(sentence) do
+      process_sentence_parts(parts, groups, latest, msg_types)
     else
-      {nil, %{groups: groups, latest: latest}}
+      _ -> {nil, %{groups: groups, latest: latest}}
     end
+  end
+
+  defp process_sentence_parts(parts, groups, latest, msg_types) do
+    parts = normalize_parts(parts)
+
+    if group_message?(parts) do
+      handle_group_message(parts, groups, latest, msg_types)
+    else
+      handle_single_message(parts, groups, latest, msg_types)
+    end
+  end
+
+  defp normalize_parts(parts) do
+    if Regex.match?(~r/!(AIVDM|AIVDO)/, Enum.at(parts, 0, "")) do
+      Enum.drop(parts, 1)
+    else
+      parts
+    end
+  end
+
+  defp group_message?(parts) do
+    Regex.match?(~r/,g:/, Enum.at(parts, 0))
+  end
+
+  defp handle_group_message(parts, groups, latest, msg_types) do
+    {decoded, new_groups} = process_group(parts, groups, msg_types)
+
+    if decoded do
+      {decoded, %{groups: new_groups, latest: update_latest(latest, decoded)}}
+    else
+      {nil, %{groups: new_groups, latest: latest}}
+    end
+  end
+
+  defp handle_single_message(parts, groups, latest, msg_types) do
+    decoded = decode_parts(parts, msg_types)
+    {decoded, %{groups: groups, latest: update_latest(latest, decoded)}}
   end
 
   defp update_latest(latest, nil), do: latest
@@ -219,75 +233,82 @@ defmodule ExAIS.Decoder do
     size = String.to_integer(s)
 
     cond do
-      num == 1 ->
-        # 1st message in group sequence
-        msg = get_valid_msg(Enum.at(parts, 1))
-
-        if msg do
-          provider_groups = Map.get(groups, tags[:p], %{})
-
-          {nil,
-           Map.put(
-             groups,
-             tags[:p],
-             Map.put(provider_groups, id, %{tag: tags, msg: msg, time: DateTime.now!("Etc/UTC")})
-           )}
-        else
-          {nil, groups}
-        end
-
-      num == size ->
-        # 2nd message in group sequence
-        # Get sub-map for this provider
-        provider_groups = Map.get(groups, tags[:p], %{})
-
-        if group = provider_groups[id] do
-          if nmea_checksum(Enum.at(parts, 1)) do
-            if msg_frag = get_valid_msg(Enum.at(parts, 1)) do
-              new_msg = merge_fragment(group[:msg], msg_frag)
-              # New groups is existing groups with this group id removed for this provider
-              {_, new_provider_groups} = Map.pop(provider_groups, id)
-              new_groups = Map.put(groups, tags[:p], new_provider_groups)
-
-              case decode_nmea(new_msg, msg_types) do
-                {:ok, data} ->
-                  {Map.merge(group[:tag], data), new_groups}
-
-                {:error, _} ->
-                  {nil, new_groups}
-              end
-            else
-
-              {nil, groups}
-            end
-          else
-
-            {nil, groups}
-          end
-        else
-
-          {nil, groups}
-        end
-
-      num > 1 ->
-        # Get sub-map for this provider
-        provider_groups = Map.get(groups, tags[:p], %{})
-
-        if group = provider_groups[id] do
-          if nmea_checksum(Enum.at(parts, 1)) do
-            if msg_frag = get_valid_msg(Enum.at(parts, 1)) do
-              new_msg = merge_fragment(group[:msg], msg_frag)
-              {nil, %{groups | tags[:p] => %{provider_groups | id => %{group | msg: new_msg}}}}
-            else
-              {nil, groups}
-            end
-          else
-            {nil, groups}
-          end
-        else
-          {nil, groups}
-        end
+      num == 1 -> process_first_message(parts, groups, tags, id)
+      num == size -> process_last_message(parts, groups, tags, id, msg_types)
+      num > 1 -> process_middle_message(parts, groups, tags, id)
     end
+  end
+
+  # Handles the first message in a group sequence
+  defp process_first_message(parts, groups, tags, id) do
+    case get_valid_msg(Enum.at(parts, 1)) do
+      nil ->
+        {nil, groups}
+
+      msg ->
+        group_entry = %{tag: tags, msg: msg, time: DateTime.now!("Etc/UTC")}
+        new_groups = update_provider_group(groups, tags[:p], id, group_entry)
+        {nil, new_groups}
+    end
+  end
+
+  # Handles the last message in a group sequence
+  defp process_last_message(parts, groups, tags, id, msg_types) do
+    provider_groups = Map.get(groups, tags[:p], %{})
+
+    with {:group, group} when not is_nil(group) <- {:group, provider_groups[id]},
+         true <- nmea_checksum(Enum.at(parts, 1)),
+         {:msg_frag, msg_frag} when not is_nil(msg_frag) <-
+           {:msg_frag, get_valid_msg(Enum.at(parts, 1))} do
+      complete_group_message(group, msg_frag, groups, provider_groups, tags, id, msg_types)
+    else
+      _ -> {nil, groups}
+    end
+  end
+
+  # Completes a group message by merging fragments and decoding
+  defp complete_group_message(group, msg_frag, groups, _provider_groups, tags, id, msg_types) do
+    new_msg = merge_fragment(group[:msg], msg_frag)
+    new_groups = remove_provider_group(groups, tags[:p], id)
+
+    case decode_nmea(new_msg, msg_types) do
+      {:ok, data} ->
+        {Map.merge(group[:tag], data), new_groups}
+
+      {:error, _} ->
+        {nil, new_groups}
+    end
+  end
+
+  # Handles intermediate messages in a group sequence
+  defp process_middle_message(parts, groups, tags, id) do
+    provider_groups = Map.get(groups, tags[:p], %{})
+
+    with {:group, group} when not is_nil(group) <- {:group, provider_groups[id]},
+         true <- nmea_checksum(Enum.at(parts, 1)),
+         {:msg_frag, msg_frag} when not is_nil(msg_frag) <-
+           {:msg_frag, get_valid_msg(Enum.at(parts, 1))} do
+      new_msg = merge_fragment(group[:msg], msg_frag)
+      updated_group = %{group | msg: new_msg}
+      new_groups = update_provider_group(groups, tags[:p], id, updated_group)
+      {nil, new_groups}
+    else
+      _ -> {nil, groups}
+    end
+  end
+
+  # Helper to update a specific group for a provider
+  defp update_provider_group(groups, provider, group_id, group_data) do
+    provider_groups = Map.get(groups, provider, %{})
+    new_provider_groups = Map.put(provider_groups, group_id, group_data)
+    Map.put(groups, provider, new_provider_groups)
+  end
+
+  # Helper to remove a specific group for a provider
+  defp remove_provider_group(groups, provider, group_id) do
+    provider_groups = Map.get(groups, provider, %{})
+    {_, new_provider_groups} = Map.pop(provider_groups, group_id)
+    Map.put(groups, provider, new_provider_groups)
   end
 
   def prune_groups(groups) do
@@ -313,23 +334,32 @@ defmodule ExAIS.Decoder do
   defp merge_fragment(msg, frag) do
     [msg_0, _msg_1, msg_2, msg_3, msg_4, msg_5, _msg_6] = String.split(msg, ",")
     [_frag_0, _frag_1, _frag_2, _frag_3, _frag_4, frag_5, _frag_6] = String.split(frag, ",")
+
     # reset total number of messages to 1
-    str = Enum.join([msg_0, "1", msg_2, msg_3, msg_4, msg_5 <> frag_5, "0"], ",")
-    chk = calc_checksum(str)
-    str <> "*" <> chk
+    [msg_0, "1", msg_2, msg_3, msg_4, msg_5 <> frag_5, "0"]
+    |> Enum.join(",")
+    |> append_checksum()
+  end
+
+  defp append_checksum(str) do
+    checksum = calc_checksum(str)
+    str <> "*" <> checksum
   end
 
   defp get_valid_msg(sentence) do
-    if nmea_checksum(sentence) do
-      [msg, _chk] = String.split(sentence, "*")
+    with true <- nmea_checksum(sentence),
+         [msg, _chk] <- String.split(sentence, "*") do
       msg
+    else
+      _ -> nil
     end
   end
 
   defp decode_parts(parts, msg_types) do
-    tags = decode_tags(Enum.at(parts, 0))
-    case decode_nmea(Enum.at(parts, 1), msg_types) do
-      {:ok, message} -> Map.merge(tags, message)
+    with tags <- decode_tags(Enum.at(parts, 0)),
+         {:ok, message} <- decode_nmea(Enum.at(parts, 1), msg_types) do
+      Map.merge(tags, message)
+    else
       _ -> nil
     end
   end
@@ -371,6 +401,7 @@ defmodule ExAIS.Decoder do
 
   def decode_nmea(str, msg_types) do
     {state, sentence} = NMEA.parse(str)
+
     try do
       cond do
         state == :error ->

@@ -1,26 +1,29 @@
 defmodule ExAIS.AisTest do
   use ExUnit.Case
 
+  alias ExAIS.Data.Ais
+  alias ExAIS.Data.NMEA
+
   describe "decode sentences" do
     test "decode class 1" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,13IbQQ000100lq`LD7J6Vi<n88AM,0*52")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 1
       assert attr.mmsi == "228237700"
       assert attr.true_heading == 38
     end
 
     test "decode class 3" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,39NSDjP02201T0HLBJDBv2GD02s1,0*14")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,39NSDjP02201T0HLBJDBv2GD02s1,0*14")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 3
       assert attr.mmsi == "636015818"
       assert attr.true_heading == 75
     end
 
     test "decode class 4" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,402;bFQv@kkLc00Dl4LE52100@J6,0*58")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,402;bFQv@kkLc00Dl4LE52100@J6,0*58")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 4
       assert attr.mmsi == "2288218"
       assert attr.utc_day == 7
@@ -29,11 +32,11 @@ defmodule ExAIS.AisTest do
 
     test "decode class 5" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse(
+        NMEA.parse(
           "!AIVDM,2,1,9,B,53qH`N0286j=<p8b220ti`62222222222222221?9p;554oF0;B3k51CPEH888888888880,0*68"
         )
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 5
       assert attr.mmsi == "261499000"
       assert attr.destination == "HOLTENAU"
@@ -41,33 +44,33 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 6" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 6
       assert attr.destination_id == 999_999_999
     end
 
     test "decode class 7" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,777QkG00RW38,0*62")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,777QkG00RW38,0*62")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 7
       assert attr.mmsi == "477655900"
     end
 
     test "decode class 8" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,83HT5APj2P00000001BQJ@2E0000,0*72")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,83HT5APj2P00000001BQJ@2E0000,0*72")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 8
       assert attr.mmsi == "227083590"
     end
 
     test "decode class 8 weather" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse(
+        NMEA.parse(
           "!AIVDM,1,1,,B,8No3H9P0GurD0nPcNIt8AAB?jh8Kkw66?wl?wnSwe1?vlOwwsAwwnPomwvh0,0*63"
         )
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 8
       assert attr.mmsi == "997251110"
       assert attr.air_temp_c == 6.7
@@ -112,16 +115,16 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 9" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,91b55vRAirOn<94M097lV@@20<6=,0*5D")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,91b55vRAirOn<94M097lV@@20<6=,0*5D")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 9
       assert attr.mmsi == "111232506"
       assert attr.sog == 122
     end
 
     test "decode class 10" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,:81:Jf1D02J0,0*0E")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,:81:Jf1D02J0,0*0E")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 10
       assert attr.mmsi == "538090168"
       assert attr.destination_id == 352_324_000
@@ -129,25 +132,25 @@ defmodule ExAIS.AisTest do
 
     test "decode class 12" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,<42Lati0W:Ov=C7P6B?=Pjoihhjhqq0,2*2B")
+        NMEA.parse("!AIVDM,1,1,,A,<42Lati0W:Ov=C7P6B?=Pjoihhjhqq0,2*2B")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 12
       assert attr.mmsi == "271002099"
       assert attr.destination_id == 271_002_111
     end
 
     test "decode class 14" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,>5?Per18=HB1U:1@E=B0m<L,2*51")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,>5?Per18=HB1U:1@E=B0m<L,2*51")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 14
       assert attr.mmsi == "351809000"
       assert attr.text == "RCVD YR TEST MSG"
     end
 
     test "decode class 16 - 144 bit" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,@6STUk004lQ206bCKNOBAb6SJ@5s,0*74")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,@6STUk004lQ206bCKNOBAb6SJ@5s,0*74")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 16
       assert attr.mmsi == "439952844"
       assert attr.destination_a_id == 315_920
@@ -156,9 +159,9 @@ defmodule ExAIS.AisTest do
 
     test "decode class 17" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,A04757QAv0agH2JdGlLP7Oqa0@TGw9H170,4*5A")
+        NMEA.parse("!AIVDM,1,1,,A,A04757QAv0agH2JdGlLP7Oqa0@TGw9H170,4*5A")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 17
       assert attr.mmsi == "4310302"
       assert attr.latitude == 0.035618333333333335
@@ -166,8 +169,8 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 18" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,B3HOIj000H08MeW52k4F7wo5oP06,0*42")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,B3HOIj000H08MeW52k4F7wo5oP06,0*42")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 18
       assert attr.mmsi == "227006920"
       assert attr.longitude == 0.115565
@@ -176,11 +179,9 @@ defmodule ExAIS.AisTest do
 
     test "decode class 19" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse(
-          "!AIVDM,1,1,,B,C69DqeP0Ar8;JH3R6<4O7wWPl@:62L>jcaQgh0000000?104222P,0*32"
-        )
+        NMEA.parse("!AIVDM,1,1,,B,C69DqeP0Ar8;JH3R6<4O7wWPl@:62L>jcaQgh0000000?104222P,0*32")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 19
       assert attr.mmsi == "412432822"
       assert attr.longitude == 118.99442666666667
@@ -189,8 +190,8 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 20" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,Dh3OvjB8IN>4,0*1D")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,Dh3OvjB8IN>4,0*1D")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 20
       assert attr.id == 3_669_705
       assert attr.offset_1 == 2182
@@ -198,9 +199,9 @@ defmodule ExAIS.AisTest do
 
     test "decode class 21" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,E>jCfrv2`0c2h0W:0a2ah@@@@@@004WD>;2<H50hppN000,4*0A")
+        NMEA.parse("!AIVDM,1,1,,B,E>jCfrv2`0c2h0W:0a2ah@@@@@@004WD>;2<H50hppN000,4*0A")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 21
       assert attr.mmsi == "992276203"
       assert attr.latitude == 49.536165
@@ -210,9 +211,9 @@ defmodule ExAIS.AisTest do
 
     test "decode class 21 VDO" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse("!AIVDO,1,1,,A,ENjHOBn67cRa@9T7Wb9P0000000?qlGd>h:hP1088;hP00,4*1A")
+        NMEA.parse("!AIVDO,1,1,,A,ENjHOBn67cRa@9T7Wb9P0000000?qlGd>h:hP1088;hP00,4*1A")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 21
       assert attr.mmsi == "992354123"
       assert attr.latitude == 51.564166666666665
@@ -221,8 +222,8 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 22" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,F030p?j2N2P73FiiNesU3FR10000,0*32")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,F030p?j2N2P73FiiNesU3FR10000,0*32")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 22
       assert attr.id == 3_160_127
       assert attr.channel_a == 2087
@@ -231,16 +232,16 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 23" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,B,G02:Kn01R`sn@291nj600000900,2*12")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,B,G02:Kn01R`sn@291nj600000900,2*12")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 23
       assert attr.mmsi == "2268120"
       assert attr.interval == 9
     end
 
     test "decode class 24 part B" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,H3HOIFTl00000006Gqjhm01p?650,0*4F")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,H3HOIFTl00000006Gqjhm01p?650,0*4F")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 24
       assert attr.mmsi == "227006810"
       assert attr.call_sign == "FW9205"
@@ -248,8 +249,8 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 24 part A" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,H3HOIj0LhuE@tp0000000000000,2*2B")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,H3HOIj0LhuE@tp0000000000000,2*2B")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 24
       assert attr.mmsi == "227006920"
       assert attr.name == "GLOUTON"
@@ -257,11 +258,11 @@ defmodule ExAIS.AisTest do
 
     test "decode class 25" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse(
+        NMEA.parse(
           "!AIVDM,2,1,3,A,I`1ifG20UrcNTFE?UgLeo@Dk:o6G4hhI8;?vW2?El>Deju@c3Si451FJd9WPU<>B,0*04"
         )
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 25
       assert attr.mmsi == "538734172"
       assert attr.repeat_indicator == 2
@@ -274,11 +275,9 @@ defmodule ExAIS.AisTest do
 
     test "decode class 26" do
       {:ok, sentence} =
-        ExAIS.Data.NMEA.parse(
-          "!AIVDM,1,1,,A,J1@@0IK70PGgT740000000000@000?D0ih1e00006JlPC9C3,0*6B"
-        )
+        NMEA.parse("!AIVDM,1,1,,A,J1@@0IK70PGgT740000000000@000?D0ih1e00006JlPC9C3,0*6B")
 
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 26
       assert attr.mmsi == "84148325"
       assert attr.destination_id == 834_699_643
@@ -286,8 +285,8 @@ defmodule ExAIS.AisTest do
     end
 
     test "decode class 27" do
-      {:ok, sentence} = ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,KCQ9r=hrFUnH7P00,0*41")
-      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+      {:ok, sentence} = NMEA.parse("!AIVDM,1,1,,A,KCQ9r=hrFUnH7P00,0*41")
+      {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 27
       assert attr.mmsi == "236091959"
       assert attr.latitude == 87.065
