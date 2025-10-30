@@ -200,7 +200,15 @@ defmodule ExAIS.Data.Ais do
   # !AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16
   defp parse_message(msg_type, payload) when msg_type == 6 do
     <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
-      spare::1, application_identifier::16, application_data::bitstring>> = payload
+      spare::1, dac::10, fid::6, data::bitstring>> = payload
+
+    gla_map =
+      if fid == 10 do
+        ExAIS.Data.Decoders.Type6.Electrical.from_binary(data)
+        |> Map.from_struct()
+      else
+        %{}
+      end
 
     %{
       repeat_indicator: repeat_indicator,
@@ -209,9 +217,10 @@ defmodule ExAIS.Data.Ais do
       destination_id: destination_id,
       retransmit_flag: retransmit_flag,
       spare: spare,
-      application_identifier: application_identifier,
-      application_data: application_data
+      application_identifier: "#{dac}#{fid}",
+      application_data: data
     }
+    |> Map.merge(gla_map)
   end
 
   # AIS Binary Acknowledgment Message (Message 7)

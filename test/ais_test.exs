@@ -1,4 +1,5 @@
 defmodule ExAIS.AisTest do
+  @moduledoc false
   use ExUnit.Case
 
   alias ExAIS.Data.Ais
@@ -48,6 +49,27 @@ defmodule ExAIS.AisTest do
       {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
       assert attr.msg_type == 6
       assert attr.destination_id == 999_999_999
+    end
+
+    test "processes when FI = 10 (GLA Electrical message)" do
+      # Example AIS VDM payload from a real GLA AtoN (FI=10)
+      {:ok, sentence} =
+        ExAIS.Data.NMEA.parse("!AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16")
+
+      {:ok, attr} = ExAIS.Data.Ais.parse(sentence.payload, sentence.padding)
+
+      assert attr.msg_type == 6
+      assert attr.destination_id == 999_999_999
+      assert attr.application_identifier == "23510"
+
+      assert is_number(attr.analogue_internal_v)
+
+      assert attr.status_internal_decoded.racon_status in [
+               "no_racon_installed",
+               "racon_not_monitored",
+               "racon_operational",
+               "racon_error"
+             ]
     end
 
     test "decode class 7" do
