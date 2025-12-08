@@ -93,47 +93,45 @@ defmodule ExAIS.AisTest do
         )
 
       {:ok, attr} = Ais.parse(sentence.payload, sentence.padding)
-      assert attr.msg_type == 8
-      assert attr.mmsi == "997251110"
-      assert attr.air_temp_c == 6.7
-      assert attr.current_direction_2 == nil
-      assert attr.current_direction_3 == nil
+      assert attr.air_pressure == 195
+      assert attr.air_pressure_trend == 0
+      assert attr.air_temp == 67
+      assert attr.current_direction_1 == 360
+      assert attr.current_direction_2 == 360
+      assert attr.current_direction_3 == 360
       assert attr.current_measuring_level_2 == 4
-      assert attr.current_measuring_level_3 == nil
-      assert attr.current_speed_2 == nil
-      assert attr.current_speed_3 == nil
-      assert attr.dew_point_c == -0.4
-      assert attr.horizontal_range == nil
-      assert attr.horizontal_visibility_at_range == false
-      assert attr.horizontal_visibility_nm == nil
-      assert attr.humidity_percent == 60
-      assert attr.ice == nil
-      assert attr.lat_deg == -52.05781666666667
-      assert attr.lon_deg == -73.0111
-      assert attr.pos_accuracy == :low
-      assert attr.precipitation_type == nil
-      assert attr.air_pressure_hpa == 995
-      assert attr.air_pressure_trend == :steady
-      assert attr.salinity == 51.0
+      assert attr.current_measuring_level_3 == 31
+      assert attr.current_speed_1 == 255
+      assert attr.current_speed_2 == 255
+      assert attr.current_speed_3 == 255
+      assert attr.dew_point == -4
+      assert attr.horizontal_visibility == 127
+      assert attr.humidity == 60
+      assert attr.ice == 3
+      assert attr.lat == -3_123_469
+      assert attr.lon == -4_380_666
+      assert attr.mmsi == "997251110"
+      assert attr.msg_type == 8
+      assert attr.pos_accuracy == 0
+      assert attr.precipitation_type == 7
+      assert attr.salinity == 510
       assert attr.sea_state == 3
-      assert attr.significant_wave_height == nil
-      assert attr.surface_current_direction == nil
-      assert attr.surface_current_speed == nil
-      assert attr.swell_direction == nil
-      assert attr.swell_height == nil
-      assert attr.swell_period == nil
+      assert attr.significant_wave_height == 255
+      assert attr.swell_direction == 360
+      assert attr.swell_height == 255
+      assert attr.swell_period == 63
       assert attr.utc_day == 15
       assert attr.utc_hour == 16
       assert attr.utc_minute == 33
-      assert attr.water_level == nil
-      assert attr.water_level_trend == nil
-      assert attr.water_temperature_c == 50.1
-      assert attr.wave_direction == nil
-      assert attr.wave_period == nil
-      assert attr.wind_dir_deg == 287
-      assert attr.wind_gust_dir_deg == 300
-      assert attr.wind_gust_knots == 20
-      assert attr.wind_speed_knots == 10
+      assert attr.water_level == 4001
+      assert attr.water_level_trend == 3
+      assert attr.water_temperature == 501
+      assert attr.wave_direction == 360
+      assert attr.wave_period == 63
+      assert attr.wind_dir == 287
+      assert attr.wind_gust == 20
+      assert attr.wind_gust_dir == 300
+      assert attr.wind_speed == 10
     end
 
     test "decode class 9" do
