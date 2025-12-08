@@ -34,17 +34,18 @@ defmodule ExAIS.Data.Decoders.WeatherReport do
     :utc_minute,
     :water_level_trend,
     :water_level,
-    :water_temperature_c,
+    :water_temperature,
     :wave_direction,
     :wave_period,
-    :wind_dir_deg,
-    :wind_gust_dir_deg,
-    :wind_gust_knots,
-    :wind_speed_knots
+    :wind_dir,
+    :wind_gust_dir,
+    :wind_gust,
+    :wind_speed
   ]
 
   @doc """
   Decode the *application payload* (already past the 56-bit Type 8 header).
+  Returns raw values extracted from the bit mask without conversion.
   """
   def from_binary(<<
         lon::signed-25,
