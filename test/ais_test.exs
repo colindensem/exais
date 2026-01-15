@@ -108,8 +108,8 @@ defmodule ExAIS.AisTest do
       assert attr.horizontal_visibility == 127
       assert attr.humidity == 60
       assert attr.ice == 3
-      assert attr.lat == -3_123_469
-      assert attr.lon == -4_380_666
+      assert attr.latitude == -5.205781666666667
+      assert attr.longitude == -7.30111
       assert attr.mmsi == "997251110"
       assert attr.msg_type == 8
       assert attr.pos_accuracy == 0
