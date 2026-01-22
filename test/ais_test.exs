@@ -65,7 +65,7 @@ defmodule ExAIS.AisTest do
       assert is_number(attr.analogue_internal_v)
 
       assert attr.status_internal_decoded.racon_status in [
-               "no_racon_installed",
+               "racon_not_installed",
                "racon_not_monitored",
                "racon_operational",
                "racon_error"

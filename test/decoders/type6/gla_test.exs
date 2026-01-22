@@ -1,8 +1,8 @@
-defmodule Decoders.Type6.ElectricalTest do
+defmodule Decoders.Type6.GlaTest do
   @moduledoc false
   use ExUnit.Case
 
-  alias ExAIS.Data.Decoders.Type6.Electrical
+  alias ExAIS.Data.Decoders.Type6.Gla
   import Bitwise
 
   describe "decode_status/1" do
@@ -18,9 +18,9 @@ defmodule Decoders.Type6.ElectricalTest do
   end
 
   describe "racon_status decoding" do
-    test "00 → no_racon_installed" do
+    test "00 → racon_not_installed" do
       bits = 0b00 <<< 3
-      assert Electrical.decode_status(bits).racon_status == "no_racon_installed"
+      assert Electrical.decode_status(bits).racon_status == "racon_not_installed"
     end
 
     test "01 → racon_not_monitored" do
