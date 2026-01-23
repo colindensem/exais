@@ -1,4 +1,4 @@
-defmodule ExAIS.Data.Decoders.Type6.Electrical do
+defmodule ExAIS.Data.Decoders.Type6.Gla do
   @moduledoc """
   Decode a GLA Type 6 (FI 6) Electrical / System Status payload.
 
@@ -30,7 +30,7 @@ defmodule ExAIS.Data.Decoders.Type6.Electrical do
   ]
 
   @racon_map %{
-    0b00 => "no_racon_installed",
+    0b00 => "racon_not_installed",
     0b01 => "racon_not_monitored",
     0b10 => "racon_operational",
     0b11 => "racon_error"

@@ -204,7 +204,7 @@ defmodule ExAIS.Data.Ais do
 
     gla_map =
       if fid == 10 do
-        ExAIS.Data.Decoders.Type6.Electrical.from_binary(data)
+        ExAIS.Data.Decoders.Type6.Gla.from_binary(data)
         |> Map.from_struct()
       else
         %{}

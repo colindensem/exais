@@ -1,14 +1,14 @@
-defmodule Decoders.Type6.ElectricalTest do
+defmodule Decoders.Type6.GlaTest do
   @moduledoc false
   use ExUnit.Case
 
-  alias ExAIS.Data.Decoders.Type6.Electrical
+  alias ExAIS.Data.Decoders.Type6.Gla
   import Bitwise
 
   describe "decode_status/1" do
     test "decodes racon and light combinations correctly" do
       # 0b10110 = racon_operational (10), light_off (10), health=0 (good)
-      result = Electrical.decode_status(0b10100)
+      result = Gla.decode_status(0b10100)
 
       assert result.racon_status == "racon_operational"
       assert result.light_status == "light_off"
@@ -18,65 +18,65 @@ defmodule Decoders.Type6.ElectricalTest do
   end
 
   describe "racon_status decoding" do
-    test "00 → no_racon_installed" do
+    test "00 → racon_not_installed" do
       bits = 0b00 <<< 3
-      assert Electrical.decode_status(bits).racon_status == "no_racon_installed"
+      assert Gla.decode_status(bits).racon_status == "racon_not_installed"
     end
 
     test "01 → racon_not_monitored" do
       bits = 0b01 <<< 3
-      assert Electrical.decode_status(bits).racon_status == "racon_not_monitored"
+      assert Gla.decode_status(bits).racon_status == "racon_not_monitored"
     end
 
     test "10 → racon_operational" do
       bits = 0b10 <<< 3
-      assert Electrical.decode_status(bits).racon_status == "racon_operational"
+      assert Gla.decode_status(bits).racon_status == "racon_operational"
     end
 
     test "11 → racon_error" do
       bits = 0b11 <<< 3
-      assert Electrical.decode_status(bits).racon_status == "racon_error"
+      assert Gla.decode_status(bits).racon_status == "racon_error"
     end
   end
 
   describe "light_status decoding" do
     test "00 → no_light_or_not_monitored" do
       bits = 0b00 <<< 1
-      assert Electrical.decode_status(bits).light_status == "no_light_or_not_monitored"
+      assert Gla.decode_status(bits).light_status == "no_light_or_not_monitored"
     end
 
     test "01 → light_on" do
       bits = 0b01 <<< 1
-      assert Electrical.decode_status(bits).light_status == "light_on"
+      assert Gla.decode_status(bits).light_status == "light_on"
     end
 
     test "10 → light_off" do
       bits = 0b10 <<< 1
-      assert Electrical.decode_status(bits).light_status == "light_off"
+      assert Gla.decode_status(bits).light_status == "light_off"
     end
 
     test "11 → light_error" do
       bits = 0b11 <<< 1
-      assert Electrical.decode_status(bits).light_status == "light_error"
+      assert Gla.decode_status(bits).light_status == "light_error"
     end
   end
 
   describe "health decoding" do
     test "0 → good" do
-      assert Electrical.decode_status(0).health == "good"
-      refute Electrical.decode_status(0).alarm?
+      assert Gla.decode_status(0).health == "good"
+      refute Gla.decode_status(0).alarm?
     end
 
     test "1 → alarm" do
-      assert Electrical.decode_status(1).health == "alarm"
-      assert Electrical.decode_status(1).alarm?
+      assert Gla.decode_status(1).health == "alarm"
+      assert Gla.decode_status(1).alarm?
     end
   end
 
   describe "combined sanity checks" do
     test "racon operational, light off, health good" do
       bits = 0b10100
-      decoded = Electrical.decode_status(bits)
+      decoded = Gla.decode_status(bits)
 
       assert decoded.racon_status == "racon_operational"
       assert decoded.light_status == "light_off"
@@ -85,7 +85,7 @@ defmodule Decoders.Type6.ElectricalTest do
 
     test "racon error, light on, alarm" do
       bits = 0b11 <<< 3 ||| 0b10 <<< 1 ||| 0b1
-      decoded = Electrical.decode_status(bits)
+      decoded = Gla.decode_status(bits)
 
       assert decoded.racon_status == "racon_error"
       assert decoded.light_status == "light_off"
@@ -100,7 +100,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<512::10, 0::10, 0::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_internal == 512
       assert msg.analogue_internal_v == 25.6
@@ -111,7 +111,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 600::10, 0::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_external_1 == 600
       assert msg.analogue_external_1_v == 30.0
@@ -122,7 +122,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_external_1 == 0
       assert msg.analogue_external_1_v == 0.0
@@ -133,7 +133,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 720::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_external_2 == 720
       assert msg.analogue_external_2_v == 36.0
@@ -144,7 +144,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_external_2 == 0
       assert msg.analogue_external_2_v == 0.0
@@ -157,7 +157,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<512::10, 600::10, 720::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.analogue_internal == 512
       assert msg.analogue_internal_v == 25.6
@@ -179,7 +179,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b10110::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.status_internal_raw == 0b10110
 
@@ -196,7 +196,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b00000::5, 0b10110110::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       assert msg.status_external_raw == 0b10110110
 
@@ -213,7 +213,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b00000::5, 0b00000000::8, 0::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
       assert msg.off_position == "in_position"
     end
 
@@ -221,7 +221,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<0::10, 0::10, 0::10, 0b00000::5, 0b00000000::8, 1::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
       assert msg.off_position == "off_position"
     end
   end
@@ -237,7 +237,7 @@ defmodule Decoders.Type6.ElectricalTest do
       payload =
         <<512::10, 600::10, 720::10, 0b10110::5, 0b10110110::8, 1::1>>
 
-      msg = Electrical.from_binary(payload)
+      msg = Gla.from_binary(payload)
 
       # voltages
       assert msg.analogue_internal_v == 25.6
