@@ -1,8 +1,8 @@
 defmodule ExAIS.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/admarrs/ex_pmtiles"
-  @version "0.2.2"
+  @source_url "https://github.com/admarrs/ais"
+  @version "0.2.3"
 
   def project do
     [
@@ -32,6 +32,16 @@ defmodule ExAIS.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  def cli do
+    [
+      coveralls: :test,
+      "coveralls.detail": :test,
+      "coveralls.post": :test,
+      "coveralls.html": :test,
+      "coveralls.cobertura": :test
     ]
   end
 
