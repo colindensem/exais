@@ -83,10 +83,9 @@ defmodule ExAIS.Data.Ais do
          )}
       rescue
         e in MatchError ->
-          Logger.debug(
-            "Error decoding message type #{msg_type} '#{orig_payload}' #{inspect(byte_size(orig_payload))}: " <>
-              Exception.message(e) <> Exception.format_stacktrace(nil)
-          )
+          Logger.debug(fn ->
+            "Error decoding message type #{msg_type} payload length #{inspect(String.length(orig_payload))}: #{inspect(e)}"
+          end)
 
           {:invalid, %{}}
       end
