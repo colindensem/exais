@@ -202,13 +202,7 @@ defmodule ExAIS.Data.Ais do
     <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
       spare::1, dac::10, fid::6, data::bitstring>> = payload
 
-    gla_map =
-      if fid == 10 do
-        ExAIS.Data.Decoders.Type6.Gla.from_binary(data)
-        |> Map.from_struct()
-      else
-        %{}
-      end
+    application_data_map = ExAIS.Data.Decoders.Type6.decode(dac, fid, data)
 
     %{
       repeat_indicator: repeat_indicator,
@@ -220,7 +214,7 @@ defmodule ExAIS.Data.Ais do
       application_identifier: "#{dac}#{fid}",
       application_data: data
     }
-    |> Map.merge(gla_map)
+    |> Map.merge(application_data_map)
   end
 
   # AIS Binary Acknowledgment Message (Message 7)
