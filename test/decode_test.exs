@@ -1,4 +1,5 @@
 defmodule ExAIS.DecodeTest do
+  @moduledoc false
   use ExUnit.Case
 
   import ExAIS.MessageFixtures
