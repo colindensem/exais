@@ -5,7 +5,7 @@ defmodule ExAIS.Data.Ais do
 
   require Logger
 
-  alias ExAIS.Data.Decoders.WeatherReport
+  alias ExAIS.Data.Decoders
   alias ExAIS.Data.SixBit, as: SixBit
 
   @doc """
@@ -200,25 +200,29 @@ defmodule ExAIS.Data.Ais do
   # !AIVDM,1,1,,A,6>jCKIkfJjOt>db;q700@20,2*16
   defp parse_message(msg_type, payload) when msg_type == 6 do
     <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
-      spare::1, dac::10, fid::6, data::bitstring>> = payload
+      spare::1, dac::10, fi::6, data::bitstring>> = payload
 
     gla_map =
-      if fid == 10 do
-        ExAIS.Data.Decoders.Type6.Gla.from_binary(data)
-        |> Map.from_struct()
-      else
-        %{}
+      case fi == 10 do
+        true ->
+          Decoders.Type6.Gla.from_binary(data)
+          |> Map.from_struct()
+
+        _ ->
+          %{}
       end
 
     %{
-      repeat_indicator: repeat_indicator,
-      mmsi: mmsi,
-      sequence_number: sequence_number,
+      application_data: data,
+      application_identifier: "#{dac}#{fi}",
+      dac: dac,
       destination_id: destination_id,
+      fi: fi,
+      mmsi: mmsi,
+      repeat_indicator: repeat_indicator,
       retransmit_flag: retransmit_flag,
-      spare: spare,
-      application_identifier: "#{dac}#{fid}",
-      application_data: data
+      sequence_number: sequence_number,
+      spare: spare
     }
     |> Map.merge(gla_map)
   end
@@ -305,12 +309,12 @@ defmodule ExAIS.Data.Ais do
   # https://www.navcen.uscg.gov/?pageName=AISMessage8
   # !AIVDM,1,1,,A,83HT5APj2P00000001BQJ@2E0000,0*72
   defp parse_message(msg_type, payload) when msg_type == 8 do
-    <<repeat_indicator::2, mmsi::30, spare::2, dac::10, fid::6, data::bitstring>> =
+    <<repeat_indicator::2, mmsi::30, spare::2, dac::10, fi::6, data::bitstring>> =
       payload
 
     weather_map =
-      if fid == 31 do
-        WeatherReport.from_binary(data)
+      if fi == 31 do
+        Decoders.WeatherReport.from_binary(data)
         |> Map.from_struct()
       else
         %{}
@@ -320,7 +324,9 @@ defmodule ExAIS.Data.Ais do
       repeat_indicator: repeat_indicator,
       mmsi: mmsi,
       spare: spare,
-      application_identifier: "#{dac}#{fid}"
+      application_identifier: "#{dac}#{fi}",
+      dac: dac,
+      fi: fi
     }
     |> Map.merge(weather_map)
   end

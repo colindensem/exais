@@ -61,15 +61,10 @@ defmodule ExAIS.AisTest do
       assert attr.msg_type == 6
       assert attr.destination_id == 999_999_999
       assert attr.application_identifier == "23510"
+      assert attr.dac == 235
+      assert attr.fi == 10
 
-      assert is_number(attr.analogue_internal_v)
-
-      assert attr.status_internal_decoded.racon_status in [
-               "racon_not_installed",
-               "racon_not_monitored",
-               "racon_operational",
-               "racon_error"
-             ]
+      assert attr.analogue_internal == 559
     end
 
     test "decode class 7" do
