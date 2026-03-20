@@ -202,7 +202,7 @@ defmodule ExAIS.Data.Ais do
     <<repeat_indicator::2, mmsi::30, sequence_number::2, destination_id::30, retransmit_flag::1,
       spare::1, dac::10, fi::6, data::bitstring>> = payload
 
-    application_data_map = ExAIS.Data.Decoders.Type6.decode(dac, fid, data)
+    application_data_map = ExAIS.Data.Decoders.Type6.decode(dac, fi, data)
 
     %{
       application_data: data,
